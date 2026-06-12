@@ -1,0 +1,12 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+  msgpackr-extract: true
+
+# Paquetes a los que se les permite ejecutar scripts de instalación (pnpm 10+).
+onlyBuiltDependencies:
+  - esbuild
+  - msgpackr-extract

@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Panel profesional, limpio, "sala de control". */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-panel-bg: #f1f5f9;
+  --color-brand-500: #2f7d6b;
+  --color-brand-600: #256555;
+
+  /* Semáforo de estado de pacientes. */
+  --color-estado-ok: #16a34a;
+  --color-estado-alerta: #d97706;
+  --color-estado-riesgo: #dc2626;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-panel-bg);
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}

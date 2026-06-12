@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* Paleta cálida y suave (verdes/azules desaturados) — NO clínica. */
+@theme {
+  --font-sans: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-calma-50: #f4f7f5;
+  --color-calma-100: #e3efe9;
+  --color-calma-200: #c6ddd3;
+  --color-calma-300: #9ec6b6;
+  --color-calma-400: #7bb6a1;
+  --color-calma-500: #5a9c85;
+  --color-calma-600: #45806c;
+
+  --color-cielo-200: #cfe1ec;
+  --color-cielo-300: #a9c8da;
+  --color-cielo-400: #7ea9c2;
+
+  --radius-card: 1.25rem;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-calma-50);
+  color: #2f3a36;
+  -webkit-font-smoothing: antialiased;
+}
