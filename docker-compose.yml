@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: mindmatch
       POSTGRES_DB: mindmatch
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - mindmatch-pgdata:/var/lib/postgresql/data
     healthcheck:

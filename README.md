@@ -20,6 +20,7 @@ packages/
 - Node ≥ 22
 - pnpm (vía `corepack` o `npm i -g pnpm`)
 - Docker (Postgres 16 + pgvector, Redis)
+- Puerto host `55432` disponible para PostgreSQL local del proyecto
 
 ## Puesta en marcha
 
@@ -27,10 +28,17 @@ packages/
 cp .env.example .env          # ajusta secretos si quieres
 docker compose up -d          # Postgres + Redis
 pnpm install
-pnpm db:migrate               # crea esquemas + tablas (requiere tablas Drizzle definidas)
+pnpm db:migrate               # crea pgvector, esquemas, tablas, restricciones e índices
 pnpm seed                     # datos demo (Fase 2)
 pnpm dev                      # api (:3001) + paciente (:5173) + panel (:5174)
 ```
+
+La URL local de base de datos documentada es
+`postgres://mindmatch:mindmatch@localhost:55432/mindmatch` para evitar colisión
+con instalaciones locales de PostgreSQL en `5432`.
+
+El modelo de datos canónico está documentado en
+`docs/architecture-data-model.md`.
 
 ## Scripts
 

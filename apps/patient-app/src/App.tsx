@@ -1,5 +1,11 @@
 import { CONNECTION_TYPES } from "@mindmatch/shared";
 
+const connectionLabels = {
+  friendship: "amistad",
+  group: "grupo",
+  romantic: "romántica",
+} as const;
+
 export function App() {
   return (
     <main className="mx-auto flex min-h-full max-w-md flex-col items-center justify-center gap-6 px-6 py-12 text-center">
@@ -27,7 +33,7 @@ export function App() {
               key={t}
               className="rounded-full bg-calma-100 px-3 py-1 text-xs font-semibold text-calma-600"
             >
-              {t}
+              {connectionLabels[t]}
             </span>
           ))}
         </div>
