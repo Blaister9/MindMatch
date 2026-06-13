@@ -66,6 +66,70 @@ El modelo de datos canónico está documentado en
 > incorrecta) responde el mismo `401` genérico. En los frontends el campo de
 > clínica viene prellenado con `VITE_DEFAULT_CLINIC_SLUG`.
 
+## Seed demo (Fase 2)
+
+`pnpm seed` resetea y reconstruye **únicamente** el tenant con slug
+`mindmatch-demo`, de forma idempotente, determinista y atómica (reset + inserción
++ verificación crítica en una sola transacción; si la verificación falla, hace
+rollback). Una segunda verificación de solo lectura corre tras el commit.
+
+### Ejecución segura
+
+```bash
+docker compose up -d
+pnpm db:migrate
+ALLOW_DEMO_SEED=true pnpm seed     # o define ALLOW_DEMO_SEED=true en tu .env
+pnpm seed                          # correrlo dos veces deja el MISMO dataset lógico
+pnpm --filter @mindmatch/api seed:verify
+```
+
+Guardas (si alguna falla, aborta sin tocar la base):
+
+- `NODE_ENV` distinto de `production`.
+- `ALLOW_DEMO_SEED=true` (bandera explícita).
+- Host de DB `localhost`/`127.0.0.1` y puerto `SEED_ALLOWED_DB_PORT` (por defecto `55432`).
+- Slug objetivo exactamente `mindmatch-demo`.
+- La doctora demo no está activa en otra clínica (de lo contrario aborta y **no**
+  borra esa clínica; usa una base local nueva o resuélvelo a mano).
+
+> ⚠️ El reset borra y reconstruye **solo** `mindmatch-demo`, en orden hijo→padre
+> por `clinic_id`. Nunca usa `TRUNCATE` global, `docker compose down -v`,
+> `db:push` ni borra otras clínicas.
+
+### Cuentas demo
+
+- Clínica: `mindmatch-demo`
+- Doctora: `doctora@demo.com` / `Demo123!`
+- Pacientes: `mariana`, `daniel`, `laura`, `andres`, `valentina`, `camilo`,
+  `juliana`, `felipe` (todos `<nombre>@demo.com` / `Demo123!`).
+
+### Conteos esperados
+
+1 clínica · 1 doctora · 8 pacientes · 8 invitaciones aceptadas · 8 perfiles ·
+15 intereses (3–6 por perfil) · 8 registros clínicos · 8 preferencias ·
+112 check-ins · 18 match scores · 7 conexiones (2 active, 4 pending_approval,
+1 paused) · 2 conversaciones directas (30 mensajes) · 1 grupo "Ansiedad social"
+(5 miembros, 20 mensajes) · 0 embeddings · 0 alerts · 0 risk scores ·
+0 eventos analytics.
+
+### Verificación e idempotencia
+
+El verificador (incluido en el seed y disponible como `seed:verify`) comprueba
+conteos, unicidad de emails, mayoría de edad, `source_invitation_id` no nulo,
+subconjunto de tipos de conexión, aislamiento de tenant por joins, que Mariana
+satisface R1 y R2, y que el resto **no** dispara R1–R5. Además calcula una
+**firma lógica** (hash del dataset sin ids ni timestamps técnicos, sin
+contraseñas ni tokens): dos ejecuciones el mismo día producen la misma firma.
+
+### Limitaciones de Fase 2
+
+- Sin IA externa: scores y explicaciones están precalculados (`source = demo`);
+  no se llama a Claude API ni a embeddings.
+- Sin datos reales: todo es ficticio y local. No se imprimen contraseñas,
+  tokens ni hashes.
+- No se siembran embeddings, alertas, risk scores ni eventos analytics; la
+  detección del Pulso (R1–R6) y la analítica llegan en fases posteriores.
+
 ## Fase 1
 
 URLs locales:

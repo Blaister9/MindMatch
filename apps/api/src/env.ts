@@ -29,6 +29,13 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   DEMO_DOCTOR_EMAIL: z.string().email().default("doctora@demo.com"),
   DEMO_DOCTOR_PASSWORD: z.string().min(8).default("Demo123!"),
+  // Guardas del seed demo (Fase 2). Tipadas y validadas aquí; nunca se leen
+  // guardas destructivas directamente de process.env sin validación.
+  ALLOW_DEMO_SEED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  SEED_ALLOWED_DB_PORT: z.coerce.number().int().positive().default(55432),
 });
 
 const parsed = envSchema.safeParse({

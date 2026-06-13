@@ -12,6 +12,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "seed": "tsx src/seed/index.ts",
+    "seed:verify": "tsx src/seed/verify-demo-seed.ts",
     "bootstrap:doctor": "tsx src/scripts/bootstrap-doctor.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
