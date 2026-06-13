@@ -10,6 +10,8 @@ export const userStatusSchema = z.enum([
 export type UserStatus = z.infer<typeof userStatusSchema>;
 
 export const loginSchema = z.object({
+  // Multi-tenant: el login se resuelve por clínica + email, nunca por email global.
+  clinicSlug: z.string().trim().min(1).max(80),
   email: z.string().trim().email().max(320),
   password: z.string().min(1).max(256),
 });

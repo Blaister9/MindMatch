@@ -53,8 +53,18 @@ El modelo de datos canónico está documentado en
 
 ## Credenciales demo
 
+- Clínica (slug): `mindmatch-demo`
 - Doctora: `doctora@demo.com` / `Demo123!`
-- Pacientes: entran por link de invitación (no hay registro abierto).
+- Pacientes: `<nombre>@demo.com` / `Demo123!` (también entran por link de invitación;
+  no hay registro abierto).
+
+> **Login multi-tenant:** `POST /auth/login` recibe `clinicSlug`, `email` y
+> `password`. El servidor resuelve primero la clínica por slug (activa) y luego
+> el usuario dentro de esa clínica; el `clinicId` de la sesión sale siempre de la
+> base de datos, nunca de una afirmación del frontend. Cualquier fallo (clínica
+> inexistente o inactiva, email inexistente, cuenta no activa o contraseña
+> incorrecta) responde el mismo `401` genérico. En los frontends el campo de
+> clínica viene prellenado con `VITE_DEFAULT_CLINIC_SLUG`.
 
 ## Fase 1
 

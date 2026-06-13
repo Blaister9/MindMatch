@@ -55,11 +55,22 @@ async function createUser(
   return { user, password };
 }
 
-async function login(email: string, password: string) {
+// Cada login usa una IP distinta para que el rate-limit por IP de /auth/login
+// (max 8/min) no se acumule a lo largo de toda la suite. No cambia el
+// comportamiento de producción; es aislamiento de prueba.
+let loginIpCounter = 0;
+function nextRemoteAddress() {
+  loginIpCounter += 1;
+  const n = loginIpCounter;
+  return `10.${(n >> 16) & 255}.${(n >> 8) & 255}.${n & 255}`;
+}
+
+async function login(clinicSlug: string, email: string, password: string) {
   return app.inject({
     method: "POST",
     url: "/auth/login",
-    payload: { email, password },
+    remoteAddress: nextRemoteAddress(),
+    payload: { clinicSlug, email, password },
   });
 }
 
@@ -130,8 +141,8 @@ describe("fase 1 auth guards", () => {
     const clinic = await createClinic();
     const doctor = await createUser(clinic.id, "doctor");
     const patient = await createUser(clinic.id, "patient");
-    const doctorLogin = await login(doctor.user.email, doctor.password);
-    const patientLogin = await login(patient.user.email, patient.password);
+    const doctorLogin = await login(clinic.slug, doctor.user.email, doctor.password);
+    const patientLogin = await login(clinic.slug, patient.user.email, patient.password);
     const doctorToken = doctorLogin.json<{ accessToken: string }>().accessToken;
     const patientToken = patientLogin.json<{ accessToken: string }>().accessToken;
 
@@ -151,6 +162,104 @@ describe("fase 1 auth guards", () => {
   });
 });
 
+describe("login multi-tenant", () => {
+  async function createUserWithEmail(
+    clinicId: string,
+    email: string,
+    role: "doctor" | "patient" = "doctor",
+    status: "active" | "suspended" = "active",
+  ) {
+    const password = "Demo123!";
+    const [user] = await db
+      .insert(schema.users)
+      .values({
+        id: randomUUID(),
+        clinicId,
+        role,
+        email,
+        passwordHash: await hashPassword(password),
+        status,
+      })
+      .returning();
+    if (!user) throw new Error("user not created");
+    return { user, password };
+  }
+
+  it("mismo email en dos clínicas: cada slug autentica al usuario correcto", async () => {
+    const clinicA = await createClinic();
+    const clinicB = await createClinic();
+    const sharedEmail = `compartido-${randomUUID()}@demo.com`;
+    const userA = await createUserWithEmail(clinicA.id, sharedEmail);
+    const userB = await createUserWithEmail(clinicB.id, sharedEmail);
+
+    const loginA = await login(clinicA.slug, sharedEmail, userA.password);
+    const loginB = await login(clinicB.slug, sharedEmail, userB.password);
+
+    expect(loginA.statusCode).toBe(200);
+    expect(loginB.statusCode).toBe(200);
+    const bodyA = loginA.json<{ user: { userId: string; clinicId: string } }>();
+    const bodyB = loginB.json<{ user: { userId: string; clinicId: string } }>();
+    expect(bodyA.user.clinicId).toBe(clinicA.id);
+    expect(bodyA.user.userId).toBe(userA.user.id);
+    expect(bodyB.user.clinicId).toBe(clinicB.id);
+    expect(bodyB.user.userId).toBe(userB.user.id);
+    // El usuario de la otra clínica nunca se selecciona pese al email idéntico.
+    expect(bodyA.user.userId).not.toBe(userB.user.id);
+  });
+
+  it("slug incorrecto devuelve error genérico sin revelar el motivo", async () => {
+    const clinic = await createClinic();
+    const { user, password } = await createUser(clinic.id, "doctor");
+
+    const wrongSlug = await login(
+      `no-existe-${randomUUID()}`,
+      user.email,
+      password,
+    );
+    const wrongPassword = await login(clinic.slug, user.email, "Incorrecta1!");
+
+    expect(wrongSlug.statusCode).toBe(401);
+    expect(wrongPassword.statusCode).toBe(401);
+    // Respuesta idéntica para "clínica inexistente" y "contraseña incorrecta":
+    // no se revela qué dato falló ni la existencia de clínica/email.
+    expect(wrongSlug.json()).toEqual(wrongPassword.json());
+    expect(JSON.stringify(wrongSlug.json())).not.toContain(clinic.slug);
+    expect(JSON.stringify(wrongSlug.json())).not.toContain(user.email);
+  });
+
+  it("usuario de otra clínica no es seleccionado con el slug equivocado", async () => {
+    const clinicA = await createClinic();
+    const clinicB = await createClinic();
+    const { user, password } = await createUser(clinicA.id, "doctor");
+
+    // Email válido en clinicA, pero pedimos login con el slug de clinicB.
+    const response = await login(clinicB.slug, user.email, password);
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("clínica inactiva no permite login", async () => {
+    const clinic = await createClinic();
+    const { user, password } = await createUser(clinic.id, "doctor");
+    await db
+      .update(schema.clinics)
+      .set({ status: "inactive" })
+      .where(eq(schema.clinics.id, clinic.id));
+
+    const response = await login(clinic.slug, user.email, password);
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("cuenta no activa devuelve el mismo 401 genérico", async () => {
+    const clinic = await createClinic();
+    const { user, password } = await createUser(clinic.id, "doctor", "suspended");
+    const baseline = await login(clinic.slug, user.email, "Incorrecta1!");
+
+    const response = await login(clinic.slug, user.email, password);
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual(baseline.json());
+  });
+});
+
 describe("fase 1 tenant isolation", () => {
   it("doctor no consulta ni revoca invitación de otra clínica", async () => {
     const clinicA = await createClinic();
@@ -158,7 +267,7 @@ describe("fase 1 tenant isolation", () => {
     const doctorA = await createUser(clinicA.id, "doctor");
     const doctorB = await createUser(clinicB.id, "doctor");
     const { invitation } = await createInvitation(clinicB.id, doctorB.user.id);
-    const loginA = await login(doctorA.user.email, doctorA.password);
+    const loginA = await login(clinicA.slug, doctorA.user.email, doctorA.password);
     const tokenA = loginA.json<{ accessToken: string }>().accessToken;
 
     const list = await app.inject({
@@ -217,7 +326,7 @@ describe("fase 1 tenant isolation", () => {
       connectionTypes: ["friendship"],
     });
 
-    const patientLogin = await login(patient.user.email, patient.password);
+    const patientLogin = await login(clinic.slug, patient.user.email, patient.password);
     const response = await app.inject({
       method: "GET",
       url: "/patient/profile",
@@ -236,7 +345,7 @@ describe("fase 1 tenant isolation", () => {
   it("endpoint doctor de fase 1 no devuelve contenido de mensajes", async () => {
     const clinic = await createClinic();
     const doctor = await createUser(clinic.id, "doctor");
-    const doctorLogin = await login(doctor.user.email, doctor.password);
+    const doctorLogin = await login(clinic.slug, doctor.user.email, doctor.password);
     const response = await app.inject({
       method: "GET",
       url: "/doctor/invitations",
@@ -287,7 +396,7 @@ describe("fase 1 refresh tokens", () => {
   it("refresh rotado no puede reutilizarse", async () => {
     const clinic = await createClinic();
     const doctor = await createUser(clinic.id, "doctor");
-    const loginResponse = await login(doctor.user.email, doctor.password);
+    const loginResponse = await login(clinic.slug, doctor.user.email, doctor.password);
     const oldCookie = loginResponse.cookies[0]?.value;
     expect(oldCookie).toBeTruthy();
 
@@ -393,7 +502,7 @@ describe("fase 1 invitations", () => {
       },
     });
 
-    const doctorLogin = await login(doctor.user.email, doctor.password);
+    const doctorLogin = await login(clinic.slug, doctor.user.email, doctor.password);
     const minor = await app.inject({
       method: "POST",
       url: "/doctor/invitations",
@@ -415,7 +524,7 @@ describe("fase 1 invitations", () => {
   it("responses no contienen hashes ni secretos", async () => {
     const clinic = await createClinic();
     const doctor = await createUser(clinic.id, "doctor");
-    const response = await login(doctor.user.email, doctor.password);
+    const response = await login(clinic.slug, doctor.user.email, doctor.password);
     const body = JSON.stringify(response.json());
     expect(body).not.toContain("passwordHash");
     expect(body).not.toContain("tokenHash");

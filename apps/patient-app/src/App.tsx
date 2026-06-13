@@ -9,6 +9,8 @@ import type {
 import { updatePatientProfileSchema } from "@mindmatch/shared";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const DEFAULT_CLINIC_SLUG =
+  import.meta.env.VITE_DEFAULT_CLINIC_SLUG ?? "mindmatch-demo";
 
 const connectionLabels: Record<ConnectionType, string> = {
   friendship: "amistad",
@@ -33,6 +35,9 @@ export function App() {
     useState<ValidateInvitationResponse["invitation"] | null>(null);
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [loginClinicSlug, setLoginClinicSlug] = useState(DEFAULT_CLINIC_SLUG);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [form, setForm] = useState({
@@ -154,6 +159,33 @@ export function App() {
     await loadProfile(data.accessToken);
   }
 
+  async function login(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage("");
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        clinicSlug: loginClinicSlug,
+        email: loginEmail,
+        password: loginPassword,
+      }),
+    });
+    if (!response.ok) {
+      setMessage("Correo o contraseña inválidos.");
+      return;
+    }
+    const data = (await response.json()) as AuthSessionResponse;
+    if (data.user.role !== "patient") {
+      setMessage("Esta cuenta debe entrar desde el panel de la doctora.");
+      return;
+    }
+    setLoginPassword("");
+    setAccessToken(data.accessToken);
+    await loadProfile(data.accessToken);
+  }
+
   async function saveProfile(event: React.FormEvent) {
     event.preventDefault();
     const parsed = updatePatientProfileSchema.safeParse(form);
@@ -231,8 +263,35 @@ export function App() {
           MindMatch
         </h1>
         <p className="mt-2 text-calma-600/80">
-          Abre tu enlace de invitación para activar la cuenta.
+          Inicia sesión o abre tu enlace de invitación para activar la cuenta.
         </p>
+        <form className="mt-6 w-full space-y-4 text-left" onSubmit={login}>
+          <label className="block text-sm font-medium text-calma-600">
+            Clínica
+            <input
+              className="field mt-1"
+              value={loginClinicSlug}
+              onChange={(event) => setLoginClinicSlug(event.target.value)}
+              placeholder="Clínica"
+            />
+          </label>
+          <input
+            className="field"
+            value={loginEmail}
+            onChange={(event) => setLoginEmail(event.target.value)}
+            placeholder="Correo"
+          />
+          <input
+            className="field"
+            type="password"
+            value={loginPassword}
+            onChange={(event) => setLoginPassword(event.target.value)}
+            placeholder="Contraseña"
+          />
+          <button className="w-full rounded-xl bg-calma-600 px-4 py-3 font-bold text-white">
+            Entrar
+          </button>
+        </form>
         {message && <p className="mt-4 text-sm text-red-600">{message}</p>}
       </main>
     );

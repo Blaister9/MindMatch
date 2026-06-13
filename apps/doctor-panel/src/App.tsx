@@ -9,6 +9,8 @@ import type {
 import { CONNECTION_TYPES, createInvitationSchema } from "@mindmatch/shared";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const DEFAULT_CLINIC_SLUG =
+  import.meta.env.VITE_DEFAULT_CLINIC_SLUG ?? "mindmatch-demo";
 
 const connectionLabels: Record<ConnectionType, string> = {
   friendship: "Amistad",
@@ -25,6 +27,7 @@ function addDays(days: number) {
 export function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [clinicSlug, setClinicSlug] = useState(DEFAULT_CLINIC_SLUG);
   const [email, setEmail] = useState("doctora@demo.com");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -89,7 +92,7 @@ export function App() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ clinicSlug, email, password }),
     });
     if (!response.ok) {
       setMessage("Correo o contraseña inválidos.");
@@ -183,6 +186,15 @@ export function App() {
         <h1 className="text-2xl font-bold text-brand-600">MindMatch</h1>
         <p className="mt-1 text-slate-500">Panel de la doctora</p>
         <form className="mt-8 space-y-4" onSubmit={login}>
+          <label className="block text-sm font-medium text-slate-600">
+            Clínica
+            <input
+              className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-3"
+              value={clinicSlug}
+              onChange={(event) => setClinicSlug(event.target.value)}
+              placeholder="Clínica"
+            />
+          </label>
           <input
             className="w-full rounded-lg border border-slate-300 px-4 py-3"
             value={email}

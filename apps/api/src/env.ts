@@ -21,7 +21,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(8),
   JWT_ACCESS_TTL: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_TTL: z.coerce.number().int().positive().default(2_592_000),
-  DEFAULT_CLINIC_SLUG: z.string().default("demo"),
+  DEFAULT_CLINIC_SLUG: z.string().default("mindmatch-demo"),
   DEMO_MODE: z
     .enum(["true", "false"])
     .default("true")

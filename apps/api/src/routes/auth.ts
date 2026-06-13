@@ -73,19 +73,44 @@ export async function authRoutes(app: FastifyInstance) {
       const body = parseBody(loginSchema, request, reply);
       if (!body) return;
 
+      const clinicSlug = body.clinicSlug.trim().toLowerCase();
       const email = body.email.toLowerCase();
-      const [user] = await db
-        .select({
-          id: schema.users.id,
-          clinicId: schema.users.clinicId,
-          role: schema.users.role,
-          status: schema.users.status,
-          email: schema.users.email,
-          passwordHash: schema.users.passwordHash,
-        })
-        .from(schema.users)
-        .where(sql`lower(${schema.users.email}) = ${email}`)
+
+      // 1) Resolver el tenant por slug + estado activo. El clinicId siempre sale
+      //    de DB; nunca confiamos en una afirmación de clínica del frontend.
+      const [clinic] = await db
+        .select({ id: schema.clinics.id })
+        .from(schema.clinics)
+        .where(
+          and(
+            eq(schema.clinics.slug, clinicSlug),
+            eq(schema.clinics.status, "active"),
+          ),
+        )
         .limit(1);
+
+      // 2) Buscar el usuario dentro de esa clínica (email case-insensitive).
+      //    Todas las fallas devuelven el mismo 401 genérico: no revelamos si
+      //    falló la clínica, el email, el estado o la contraseña.
+      const [user] = clinic
+        ? await db
+            .select({
+              id: schema.users.id,
+              clinicId: schema.users.clinicId,
+              role: schema.users.role,
+              status: schema.users.status,
+              email: schema.users.email,
+              passwordHash: schema.users.passwordHash,
+            })
+            .from(schema.users)
+            .where(
+              and(
+                eq(schema.users.clinicId, clinic.id),
+                sql`lower(${schema.users.email}) = ${email}`,
+              ),
+            )
+            .limit(1)
+        : [];
 
       if (!user || user.status !== "active" || !user.passwordHash) {
         return sendError(reply, 401, "INVALID_CREDENTIALS");
