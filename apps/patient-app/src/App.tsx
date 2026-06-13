@@ -7,6 +7,8 @@ import type {
   ValidateInvitationResponse,
 } from "@mindmatch/shared";
 import { updatePatientProfileSchema } from "@mindmatch/shared";
+import { DiscoveryDeck } from "./components/DiscoveryDeck";
+import { ConnectionsList } from "./components/ConnectionsList";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const DEFAULT_CLINIC_SLUG =
@@ -38,6 +40,9 @@ export function App() {
   const [loginClinicSlug, setLoginClinicSlug] = useState(DEFAULT_CLINIC_SLUG);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [tab, setTab] = useState<"descubrir" | "conexiones" | "perfil">(
+    "descubrir",
+  );
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [form, setForm] = useState({
@@ -301,16 +306,42 @@ export function App() {
 
   return (
     <main className="mx-auto min-h-full max-w-md px-6 py-8">
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-calma-600">Tu perfil</h1>
-          <p className="text-sm text-calma-600/70">Información social segura</p>
+          <h1 className="text-2xl font-extrabold text-calma-600">MindMatch</h1>
+          <p className="text-sm text-calma-600/70">Tu espacio social seguro</p>
         </div>
         <button className="rounded-xl border border-calma-200 px-3 py-2 text-sm text-calma-600" onClick={logout}>
           Salir
         </button>
       </header>
 
+      <nav className="mb-6 grid grid-cols-3 gap-2" aria-label="Secciones">
+        {(
+          [
+            ["descubrir", "Descubrir"],
+            ["conexiones", "Conexiones"],
+            ["perfil", "Perfil"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            aria-current={tab === key}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold ${
+              tab === key ? "bg-calma-600 text-white" : "bg-calma-100 text-calma-600"
+            }`}
+            onClick={() => setTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {tab === "descubrir" && accessToken && <DiscoveryDeck token={accessToken} />}
+      {tab === "conexiones" && accessToken && <ConnectionsList token={accessToken} />}
+
+      {tab === "perfil" && (
       <form className="space-y-4 rounded-card bg-white p-5 shadow-sm" onSubmit={saveProfile}>
         <input className="field" placeholder="Nombre visible" value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} />
         <input className="field" placeholder="Ciudad" value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} />
@@ -371,6 +402,7 @@ export function App() {
         </button>
         {message && <p className="text-sm text-calma-600">{message}</p>}
       </form>
+      )}
     </main>
   );
 }

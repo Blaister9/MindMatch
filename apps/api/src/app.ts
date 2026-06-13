@@ -4,6 +4,8 @@ import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { authRoutes } from "./routes/auth";
+import { discoveryRoutes } from "./routes/discovery";
+import { doctorMatchRoutes } from "./routes/doctor-matches";
 import { invitationRoutes } from "./routes/invitations";
 import { patientRoutes } from "./routes/patient";
 import { env, frontendOrigins } from "./env";
@@ -89,6 +91,8 @@ export function buildApp(): FastifyInstance {
   app.register(authRoutes);
   app.register(invitationRoutes);
   app.register(patientRoutes);
+  app.register(discoveryRoutes);
+  app.register(doctorMatchRoutes);
 
   return app;
 }

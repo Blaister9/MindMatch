@@ -7,6 +7,7 @@ import type {
   ListInvitationsResponse,
 } from "@mindmatch/shared";
 import { CONNECTION_TYPES, createInvitationSchema } from "@mindmatch/shared";
+import { PendingMatches } from "./components/PendingMatches";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const DEFAULT_CLINIC_SLUG =
@@ -236,7 +237,9 @@ export function App() {
         </button>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl gap-6 px-8 py-8 lg:grid-cols-[420px_1fr]">
+      <main className="mx-auto w-full max-w-6xl space-y-6 px-8 py-8">
+        {accessToken && <PendingMatches token={accessToken} />}
+        <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-6">
           <h2 className="text-lg font-bold text-slate-800">Crear invitación</h2>
           <form className="mt-5 space-y-4" onSubmit={createInvitation}>
@@ -306,6 +309,7 @@ export function App() {
             ))}
           </div>
         </section>
+        </div>
       </main>
     </div>
   );

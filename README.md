@@ -130,6 +130,37 @@ contraseñas ni tokens): dos ejecuciones el mismo día producen la misma firma.
 - No se siembran embeddings, alertas, risk scores ni eventos analytics; la
   detección del Pulso (R1–R6) y la analítica llegan en fases posteriores.
 
+## Fase 3 — Matching, swipe y aprobación
+
+Flujo de descubrimiento y conexión supervisada:
+
+- **Paciente** (`requireRole('patient')`):
+  - `GET /patient/discovery/candidates` — deck de candidatos (sin email, sin
+    fecha de nacimiento: solo edad; sin `clinic_id` ni datos clínicos).
+  - `POST /patient/swipes` `{ targetProfileId, decision }` — `like`/`pass`. La
+    decisión es inmutable (primera gana; cambiarla devuelve `409`). El backend
+    revalida filtros duros y toma el score real; nunca confía en el cliente.
+  - `GET /patient/connections` — estado de sus conexiones (sin chat).
+- **Doctora** (`requireRole('doctor')`):
+  - `GET /doctor/matches/pending` — bandeja de matches `pending_approval`
+    (sin cuerpos de mensajes).
+  - `POST /doctor/matches/:id/approve` — crea la conversación y deja la conexión
+    en `active` (registra `clinical.match_decisions`).
+  - `POST /doctor/matches/:id/pause` — pausa un match pendiente.
+
+Reglas clave: el `like` mutuo crea **una** conexión `pending_approval` con
+`match_score_id` no nulo; el tipo de conexión se deriva del par (prioridad
+`friendship`, luego `romantic`; `group` es membresía, no swipe). Match mutuo y
+aprobación son transaccionales e idempotentes (advisory lock por par + índices
+únicos).
+
+Proveedor de matching seleccionable con `MATCHING_PROVIDER`:
+
+- `demo` (por defecto): lee `social.match_scores` sembrados.
+- `pgvector`: similitud coseno sobre `social.profile_embeddings`; si faltan
+  embeddings devuelve un estado controlado (deck vacío) sin llamar servicios
+  externos.
+
 ## Fase 1
 
 URLs locales:

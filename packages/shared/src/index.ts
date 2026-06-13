@@ -8,4 +8,5 @@ export * from "./dates";
 export * from "./errors";
 export * from "./interests";
 export * from "./invitations";
+export * from "./matching";
 export * from "./profile";

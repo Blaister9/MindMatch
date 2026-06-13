@@ -36,6 +36,9 @@ const envSchema = z.object({
     .default("false")
     .transform((v) => v === "true"),
   SEED_ALLOWED_DB_PORT: z.coerce.number().int().positive().default(55432),
+  // Selección explícita del proveedor de matching (Fase 3). Demo lee
+  // social.match_scores sembrados; pgvector usa profile_embeddings.
+  MATCHING_PROVIDER: z.enum(["demo", "pgvector"]).default("demo"),
 });
 
 const parsed = envSchema.safeParse({

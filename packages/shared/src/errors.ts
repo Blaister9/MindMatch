@@ -10,6 +10,7 @@ export const publicErrorCodeSchema = z.enum([
   "INVITATION_REVOKED",
   "INVITATION_USED",
   "NOT_FOUND",
+  "CONFLICT",
   "RATE_LIMITED",
 ]);
 

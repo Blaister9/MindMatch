@@ -11,6 +11,7 @@ const defaultMessages: Record<PublicErrorCode, string> = {
   INVITATION_REVOKED: "La invitación fue revocada.",
   INVITATION_USED: "La invitación ya fue utilizada.",
   NOT_FOUND: "No encontramos el recurso solicitado.",
+  CONFLICT: "La acción entra en conflicto con el estado actual.",
   RATE_LIMITED: "Demasiados intentos. Inténtalo de nuevo más tarde.",
 };
 
