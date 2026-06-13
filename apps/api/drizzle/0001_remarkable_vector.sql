@@ -1,0 +1,4 @@
+ALTER TABLE "social"."patient_profiles" ADD COLUMN "source_invitation_id" uuid;--> statement-breakpoint
+ALTER TABLE "social"."patient_profiles" ADD CONSTRAINT "patient_profiles_source_invitation_id_invitations_id_fk" FOREIGN KEY ("source_invitation_id") REFERENCES "social"."invitations"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "patient_profiles_source_invitation_uidx" ON "social"."patient_profiles" USING btree ("source_invitation_id");--> statement-breakpoint
+CREATE INDEX "patient_profiles_source_invitation_idx" ON "social"."patient_profiles" USING btree ("clinic_id","source_invitation_id");

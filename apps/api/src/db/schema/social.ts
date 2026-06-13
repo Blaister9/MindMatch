@@ -237,6 +237,10 @@ export const patientProfiles = social.table(
     id: id(),
     clinicId: clinicId(),
     userId: uuid("user_id").notNull(),
+    sourceInvitationId: uuid("source_invitation_id").references(
+      () => invitations.id,
+      { onDelete: "restrict" },
+    ),
     displayName: varchar("display_name", { length: 160 }).notNull(),
     birthDate: date("birth_date").notNull(),
     city: varchar("city", { length: 120 }).notNull(),
@@ -263,6 +267,13 @@ export const patientProfiles = social.table(
     userUnique: uniqueIndex("patient_profiles_clinic_user_uidx").on(
       table.clinicId,
       table.userId,
+    ),
+    sourceInvitationUnique: uniqueIndex(
+      "patient_profiles_source_invitation_uidx",
+    ).on(table.sourceInvitationId),
+    sourceInvitationIdx: index("patient_profiles_source_invitation_idx").on(
+      table.clinicId,
+      table.sourceInvitationId,
     ),
     clinicIdx: index("patient_profiles_clinic_id_idx").on(table.clinicId),
     cityIdx: index("patient_profiles_clinic_city_idx").on(

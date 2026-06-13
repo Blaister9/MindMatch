@@ -1,14 +1,20 @@
 import { z } from "zod";
 import { roleSchema } from "./roles";
 
-/** Login de la doctora (email + password). */
+export const userStatusSchema = z.enum([
+  "invited",
+  "active",
+  "suspended",
+  "inactive",
+]);
+export type UserStatus = z.infer<typeof userStatusSchema>;
+
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().trim().email().max(320),
+  password: z.string().min(1).max(256),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
-/** Payload del JWT de acceso. */
 export const jwtPayloadSchema = z.object({
   sub: z.string().uuid(),
   role: roleSchema,
@@ -16,15 +22,23 @@ export const jwtPayloadSchema = z.object({
 });
 export type JwtPayload = z.infer<typeof jwtPayloadSchema>;
 
-/** Respuesta de autenticación: tokens + usuario básico. */
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+export const authUserSchema = z.object({
+  userId: z.string().uuid(),
+  clinicId: z.string().uuid(),
+  role: roleSchema,
+  status: userStatusSchema,
+  email: z.string().email(),
+  displayName: z.string(),
+});
+export type AuthUser = z.infer<typeof authUserSchema>;
 
-export interface AuthUser {
-  id: string;
-  role: z.infer<typeof roleSchema>;
-  clinicId: string;
-  displayName: string;
-}
+export const authSessionResponseSchema = z.object({
+  accessToken: z.string(),
+  user: authUserSchema,
+});
+export type AuthSessionResponse = z.infer<typeof authSessionResponseSchema>;
+
+export const meResponseSchema = z.object({
+  user: authUserSchema,
+});
+export type MeResponse = z.infer<typeof meResponseSchema>;

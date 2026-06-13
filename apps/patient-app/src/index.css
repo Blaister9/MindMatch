@@ -31,3 +31,20 @@ body {
   color: #2f3a36;
   -webkit-font-smoothing: antialiased;
 }
+
+@layer components {
+  .field {
+    width: 100%;
+    border-radius: 0.875rem;
+    border: 1px solid var(--color-calma-200);
+    background: white;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+    outline: none;
+  }
+
+  .field:focus {
+    border-color: var(--color-calma-500);
+    box-shadow: 0 0 0 3px rgb(90 156 133 / 0.14);
+  }
+}

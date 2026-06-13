@@ -1,0 +1,4320 @@
+{
+  "id": "cfac7b2c-0359-46ee-bcd0-6a1829d3d65d",
+  "prevId": "8a7ed8ea-ecfa-4e4c-b19b-4124c578ded2",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "social.clinics": {
+      "name": "clinics",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "clinic_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "clinics_slug_uidx": {
+          "name": "clinics_slug_uidx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "social.connections": {
+      "name": "connections",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_a_id": {
+          "name": "patient_a_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_b_id": {
+          "name": "patient_b_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "match_score_id": {
+          "name": "match_score_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "connection_type": {
+          "name": "connection_type",
+          "type": "connection_type",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "connection_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending_approval'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "connections_pair_type_uidx": {
+          "name": "connections_pair_type_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_a_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_b_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "connection_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "connections_status_idx": {
+          "name": "connections_status_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "connections_patient_a_fk": {
+          "name": "connections_patient_a_fk",
+          "tableFrom": "connections",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_a_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "connections_patient_b_fk": {
+          "name": "connections_patient_b_fk",
+          "tableFrom": "connections",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_b_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "connections_match_score_fk": {
+          "name": "connections_match_score_fk",
+          "tableFrom": "connections",
+          "tableTo": "match_scores",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "match_score_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "connections_clinic_id_id_unique": {
+          "name": "connections_clinic_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clinic_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "connections_canonical_pair_chk": {
+          "name": "connections_canonical_pair_chk",
+          "value": "\"social\".\"connections\".\"patient_a_id\" < \"social\".\"connections\".\"patient_b_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.conversation_members": {
+      "name": "conversation_members",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_role": {
+          "name": "member_role",
+          "type": "conversation_member_role",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "left_at": {
+          "name": "left_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "conversation_members_unique_uidx": {
+          "name": "conversation_members_unique_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "conversation_members_user_idx": {
+          "name": "conversation_members_user_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_members_conversation_fk": {
+          "name": "conversation_members_conversation_fk",
+          "tableFrom": "conversation_members",
+          "tableTo": "conversations",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "conversation_members_user_fk": {
+          "name": "conversation_members_user_fk",
+          "tableFrom": "conversation_members",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "social.conversations": {
+      "name": "conversations",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connection_id": {
+          "name": "connection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "conversation_type",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "conversation_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversations_status_idx": {
+          "name": "conversations_status_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversations_connection_fk": {
+          "name": "conversations_connection_fk",
+          "tableFrom": "conversations",
+          "tableTo": "connections",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "connection_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "conversations_clinic_id_id_unique": {
+          "name": "conversations_clinic_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clinic_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "conversations_direct_requires_connection_chk": {
+          "name": "conversations_direct_requires_connection_chk",
+          "value": "(\"social\".\"conversations\".\"type\" = 'direct' AND \"social\".\"conversations\".\"connection_id\" IS NOT NULL) OR (\"social\".\"conversations\".\"type\" = 'group' AND \"social\".\"conversations\".\"connection_id\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.interests": {
+      "name": "interests",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "interests_clinic_slug_uidx": {
+          "name": "interests_clinic_slug_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "interests_clinic_active_idx": {
+          "name": "interests_clinic_active_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "active",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "interests_clinic_id_clinics_id_fk": {
+          "name": "interests_clinic_id_clinics_id_fk",
+          "tableFrom": "interests",
+          "tableTo": "clinics",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "interests_clinic_id_id_unique": {
+          "name": "interests_clinic_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clinic_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "social.invitations": {
+      "name": "invitations",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_name": {
+          "name": "patient_name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "birth_date": {
+          "name": "birth_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allowed_connection_types": {
+          "name": "allowed_connection_types",
+          "type": "connection_type[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "restrictions_json": {
+          "name": "restrictions_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "invitation_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "invitations_token_hash_uidx": {
+          "name": "invitations_token_hash_uidx",
+          "columns": [
+            {
+              "expression": "token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invitations_clinic_email_idx": {
+          "name": "invitations_clinic_email_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invitations_status_expires_idx": {
+          "name": "invitations_status_expires_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "invitations_created_by_user_fk": {
+          "name": "invitations_created_by_user_fk",
+          "tableFrom": "invitations",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "invitations_birth_date_adult_chk": {
+          "name": "invitations_birth_date_adult_chk",
+          "value": "\"social\".\"invitations\".\"birth_date\" <= CURRENT_DATE - INTERVAL '18 years'"
+        },
+        "invitations_allowed_connection_types_nonempty_chk": {
+          "name": "invitations_allowed_connection_types_nonempty_chk",
+          "value": "cardinality(\"social\".\"invitations\".\"allowed_connection_types\") > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.match_scores": {
+      "name": "match_scores",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_a_id": {
+          "name": "patient_a_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_b_id": {
+          "name": "patient_b_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "explanation": {
+          "name": "explanation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "match_score_source",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hard_filters_passed": {
+          "name": "hard_filters_passed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "match_scores_pair_uidx": {
+          "name": "match_scores_pair_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_a_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_b_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "match_scores_clinic_score_idx": {
+          "name": "match_scores_clinic_score_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "score",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "match_scores_patient_a_fk": {
+          "name": "match_scores_patient_a_fk",
+          "tableFrom": "match_scores",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_a_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "match_scores_patient_b_fk": {
+          "name": "match_scores_patient_b_fk",
+          "tableFrom": "match_scores",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_b_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "match_scores_clinic_id_id_unique": {
+          "name": "match_scores_clinic_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clinic_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "match_scores_score_chk": {
+          "name": "match_scores_score_chk",
+          "value": "\"social\".\"match_scores\".\"score\" >= 0 AND \"social\".\"match_scores\".\"score\" <= 1"
+        },
+        "match_scores_canonical_pair_chk": {
+          "name": "match_scores_canonical_pair_chk",
+          "value": "\"social\".\"match_scores\".\"patient_a_id\" < \"social\".\"match_scores\".\"patient_b_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.message_reports": {
+      "name": "message_reports",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reporter_user_id": {
+          "name": "reporter_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "details": {
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "message_report_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "message_reports_status_idx": {
+          "name": "message_reports_status_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "message_reports_created_at_idx": {
+          "name": "message_reports_created_at_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "message_reports_message_fk": {
+          "name": "message_reports_message_fk",
+          "tableFrom": "message_reports",
+          "tableTo": "messages",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "message_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "message_reports_reporter_user_fk": {
+          "name": "message_reports_reporter_user_fk",
+          "tableFrom": "message_reports",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "reporter_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "social.messages": {
+      "name": "messages",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_user_id": {
+          "name": "sender_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_type": {
+          "name": "message_type",
+          "type": "message_type",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'text'"
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "edited_at": {
+          "name": "edited_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "messages_conversation_sent_at_idx": {
+          "name": "messages_conversation_sent_at_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sent_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "messages_sender_sent_at_idx": {
+          "name": "messages_sender_sent_at_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sender_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sent_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "messages_conversation_fk": {
+          "name": "messages_conversation_fk",
+          "tableFrom": "messages",
+          "tableTo": "conversations",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "messages_sender_user_fk": {
+          "name": "messages_sender_user_fk",
+          "tableFrom": "messages",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "sender_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "messages_clinic_id_id_unique": {
+          "name": "messages_clinic_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clinic_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "social.patient_interests": {
+      "name": "patient_interests",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_profile_id": {
+          "name": "patient_profile_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "interest_id": {
+          "name": "interest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight": {
+          "name": "weight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "patient_interests_unique_uidx": {
+          "name": "patient_interests_unique_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_profile_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "interest_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patient_interests_interest_idx": {
+          "name": "patient_interests_interest_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "interest_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "patient_interests_patient_profile_fk": {
+          "name": "patient_interests_patient_profile_fk",
+          "tableFrom": "patient_interests",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_profile_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "patient_interests_interest_fk": {
+          "name": "patient_interests_interest_fk",
+          "tableFrom": "patient_interests",
+          "tableTo": "interests",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "interest_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "patient_interests_weight_chk": {
+          "name": "patient_interests_weight_chk",
+          "value": "\"social\".\"patient_interests\".\"weight\" BETWEEN 1 AND 5"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.patient_profiles": {
+      "name": "patient_profiles",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_invitation_id": {
+          "name": "source_invitation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "birth_date": {
+          "name": "birth_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city": {
+          "name": "city",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "goals": {
+          "name": "goals",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connection_types": {
+          "name": "connection_types",
+          "type": "connection_type[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onboarding_completed_at": {
+          "name": "onboarding_completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "patient_profiles_clinic_user_uidx": {
+          "name": "patient_profiles_clinic_user_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patient_profiles_source_invitation_uidx": {
+          "name": "patient_profiles_source_invitation_uidx",
+          "columns": [
+            {
+              "expression": "source_invitation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patient_profiles_source_invitation_idx": {
+          "name": "patient_profiles_source_invitation_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_invitation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patient_profiles_clinic_id_idx": {
+          "name": "patient_profiles_clinic_id_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patient_profiles_clinic_city_idx": {
+          "name": "patient_profiles_clinic_city_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "city",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "patient_profiles_source_invitation_id_invitations_id_fk": {
+          "name": "patient_profiles_source_invitation_id_invitations_id_fk",
+          "tableFrom": "patient_profiles",
+          "tableTo": "invitations",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "source_invitation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "patient_profiles_user_fk": {
+          "name": "patient_profiles_user_fk",
+          "tableFrom": "patient_profiles",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "patient_profiles_clinic_id_id_unique": {
+          "name": "patient_profiles_clinic_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clinic_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "patient_profiles_birth_date_adult_chk": {
+          "name": "patient_profiles_birth_date_adult_chk",
+          "value": "\"social\".\"patient_profiles\".\"birth_date\" <= CURRENT_DATE - INTERVAL '18 years'"
+        },
+        "patient_profiles_connection_types_nonempty_chk": {
+          "name": "patient_profiles_connection_types_nonempty_chk",
+          "value": "cardinality(\"social\".\"patient_profiles\".\"connection_types\") > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.profile_embeddings": {
+      "name": "profile_embeddings",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_profile_id": {
+          "name": "patient_profile_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "embedding_model": {
+          "name": "embedding_model",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dimensions": {
+          "name": "dimensions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1536
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "profile_embeddings_profile_model_uidx": {
+          "name": "profile_embeddings_profile_model_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_profile_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "embedding_model",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "profile_embeddings_patient_profile_fk": {
+          "name": "profile_embeddings_patient_profile_fk",
+          "tableFrom": "profile_embeddings",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_profile_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "profile_embeddings_dimensions_chk": {
+          "name": "profile_embeddings_dimensions_chk",
+          "value": "\"social\".\"profile_embeddings\".\"dimensions\" = 1536"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.refresh_tokens": {
+      "name": "refresh_tokens",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "refresh_tokens_token_hash_uidx": {
+          "name": "refresh_tokens_token_hash_uidx",
+          "columns": [
+            {
+              "expression": "token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "refresh_tokens_clinic_user_idx": {
+          "name": "refresh_tokens_clinic_user_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "refresh_tokens_expires_at_idx": {
+          "name": "refresh_tokens_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "refresh_tokens_user_fk": {
+          "name": "refresh_tokens_user_fk",
+          "tableFrom": "refresh_tokens",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "social.support_groups": {
+      "name": "support_groups",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_members": {
+          "name": "max_members",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "support_group_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "support_groups_conversation_uidx": {
+          "name": "support_groups_conversation_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "support_groups_status_idx": {
+          "name": "support_groups_status_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "support_groups_conversation_fk": {
+          "name": "support_groups_conversation_fk",
+          "tableFrom": "support_groups",
+          "tableTo": "conversations",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "support_groups_max_members_chk": {
+          "name": "support_groups_max_members_chk",
+          "value": "\"social\".\"support_groups\".\"max_members\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.swipes": {
+      "name": "swipes",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_patient_id": {
+          "name": "actor_patient_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_patient_id": {
+          "name": "target_patient_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decision": {
+          "name": "decision",
+          "type": "swipe_decision",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "swipes_actor_target_uidx": {
+          "name": "swipes_actor_target_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "actor_patient_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_patient_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "swipes_target_idx": {
+          "name": "swipes_target_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_patient_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "swipes_actor_patient_fk": {
+          "name": "swipes_actor_patient_fk",
+          "tableFrom": "swipes",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "actor_patient_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "swipes_target_patient_fk": {
+          "name": "swipes_target_patient_fk",
+          "tableFrom": "swipes",
+          "tableTo": "patient_profiles",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "target_patient_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "swipes_distinct_patients_chk": {
+          "name": "swipes_distinct_patients_chk",
+          "value": "\"social\".\"swipes\".\"actor_patient_id\" <> \"social\".\"swipes\".\"target_patient_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "social.users": {
+      "name": "users",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "user_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'invited'"
+        },
+        "last_login_at": {
+          "name": "last_login_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "users_clinic_id_idx": {
+          "name": "users_clinic_id_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_clinic_role_idx": {
+          "name": "users_clinic_role_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_clinic_email_lower_uidx": {
+          "name": "users_clinic_email_lower_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "users_clinic_id_clinics_id_fk": {
+          "name": "users_clinic_id_clinics_id_fk",
+          "tableFrom": "users",
+          "tableTo": "clinics",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_clinic_id_id_unique": {
+          "name": "users_clinic_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "clinic_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "social.wellness_missions": {
+      "name": "wellness_missions",
+      "schema": "social",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assigned_by_user_id": {
+          "name": "assigned_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "due_date": {
+          "name": "due_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "wellness_mission_status",
+          "typeSchema": "social",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'assigned'"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "wellness_missions_patient_status_idx": {
+          "name": "wellness_missions_patient_status_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "wellness_missions_due_date_idx": {
+          "name": "wellness_missions_due_date_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "due_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "wellness_missions_patient_user_fk": {
+          "name": "wellness_missions_patient_user_fk",
+          "tableFrom": "wellness_missions",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "wellness_missions_assigned_by_user_fk": {
+          "name": "wellness_missions_assigned_by_user_fk",
+          "tableFrom": "wellness_missions",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "assigned_by_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "clinical.alerts": {
+      "name": "alerts",
+      "schema": "clinical",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rule_code": {
+          "name": "rule_code",
+          "type": "pulse_rule_code",
+          "typeSchema": "clinical",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "severity": {
+          "name": "severity",
+          "type": "alert_severity",
+          "typeSchema": "clinical",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "alert_status",
+          "typeSchema": "clinical",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "inputs_json": {
+          "name": "inputs_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "triggered_at": {
+          "name": "triggered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "managed_at": {
+          "name": "managed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "managed_by_user_id": {
+          "name": "managed_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "management_note": {
+          "name": "management_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "alerts_triage_idx": {
+          "name": "alerts_triage_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "severity",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "triggered_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "alerts_patient_triggered_idx": {
+          "name": "alerts_patient_triggered_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "triggered_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "alerts_patient_user_fk": {
+          "name": "alerts_patient_user_fk",
+          "tableFrom": "alerts",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "alerts_managed_by_user_fk": {
+          "name": "alerts_managed_by_user_fk",
+          "tableFrom": "alerts",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "managed_by_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "clinical.check_in_preferences": {
+      "name": "check_in_preferences",
+      "schema": "clinical",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "local_time": {
+          "name": "local_time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "check_in_preferences_patient_uidx": {
+          "name": "check_in_preferences_patient_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "check_in_preferences_patient_user_fk": {
+          "name": "check_in_preferences_patient_user_fk",
+          "tableFrom": "check_in_preferences",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "clinical.check_ins": {
+      "name": "check_ins",
+      "schema": "clinical",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "check_in_date": {
+          "name": "check_in_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mood": {
+          "name": "mood",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sleep": {
+          "name": "sleep",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connected_with_someone": {
+          "name": "connected_with_someone",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "check_ins_patient_date_uidx": {
+          "name": "check_ins_patient_date_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "check_in_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "check_ins_patient_date_idx": {
+          "name": "check_ins_patient_date_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "check_in_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "check_ins_patient_user_fk": {
+          "name": "check_ins_patient_user_fk",
+          "tableFrom": "check_ins",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "check_ins_mood_chk": {
+          "name": "check_ins_mood_chk",
+          "value": "\"clinical\".\"check_ins\".\"mood\" BETWEEN 1 AND 5"
+        },
+        "check_ins_sleep_chk": {
+          "name": "check_ins_sleep_chk",
+          "value": "\"clinical\".\"check_ins\".\"sleep\" BETWEEN 1 AND 5"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "clinical.match_decisions": {
+      "name": "match_decisions",
+      "schema": "clinical",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connection_id": {
+          "name": "connection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "doctor_user_id": {
+          "name": "doctor_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decision": {
+          "name": "decision",
+          "type": "match_decision",
+          "typeSchema": "clinical",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rationale": {
+          "name": "rationale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "match_decisions_connection_created_idx": {
+          "name": "match_decisions_connection_created_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "match_decisions_doctor_created_idx": {
+          "name": "match_decisions_doctor_created_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "doctor_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "match_decisions_connection_fk": {
+          "name": "match_decisions_connection_fk",
+          "tableFrom": "match_decisions",
+          "tableTo": "connections",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "connection_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "match_decisions_doctor_user_fk": {
+          "name": "match_decisions_doctor_user_fk",
+          "tableFrom": "match_decisions",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "doctor_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "clinical.patient_clinical": {
+      "name": "patient_clinical",
+      "schema": "clinical",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assigned_doctor_user_id": {
+          "name": "assigned_doctor_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consent_status": {
+          "name": "consent_status",
+          "type": "consent_status",
+          "typeSchema": "clinical",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "care_status": {
+          "name": "care_status",
+          "type": "care_status",
+          "typeSchema": "clinical",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "patient_clinical_patient_uidx": {
+          "name": "patient_clinical_patient_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patient_clinical_doctor_idx": {
+          "name": "patient_clinical_doctor_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "assigned_doctor_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "patient_clinical_patient_user_fk": {
+          "name": "patient_clinical_patient_user_fk",
+          "tableFrom": "patient_clinical",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "patient_clinical_assigned_doctor_user_fk": {
+          "name": "patient_clinical_assigned_doctor_user_fk",
+          "tableFrom": "patient_clinical",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "assigned_doctor_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "clinical.professional_notes": {
+      "name": "professional_notes",
+      "schema": "clinical",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "doctor_user_id": {
+          "name": "doctor_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "professional_notes_patient_created_idx": {
+          "name": "professional_notes_patient_created_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "professional_notes_patient_user_fk": {
+          "name": "professional_notes_patient_user_fk",
+          "tableFrom": "professional_notes",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "professional_notes_doctor_user_fk": {
+          "name": "professional_notes_doctor_user_fk",
+          "tableFrom": "professional_notes",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "doctor_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "clinical.risk_scores": {
+      "name": "risk_scores",
+      "schema": "clinical",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "risk_level",
+          "typeSchema": "clinical",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rule_codes": {
+          "name": "rule_codes",
+          "type": "pulse_rule_code[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inputs_json": {
+          "name": "inputs_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evaluated_at": {
+          "name": "evaluated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "risk_scores_patient_evaluated_idx": {
+          "name": "risk_scores_patient_evaluated_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "evaluated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "risk_scores_level_idx": {
+          "name": "risk_scores_level_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "level",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "risk_scores_patient_user_fk": {
+          "name": "risk_scores_patient_user_fk",
+          "tableFrom": "risk_scores",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "risk_scores_score_chk": {
+          "name": "risk_scores_score_chk",
+          "value": "\"clinical\".\"risk_scores\".\"score\" IS NULL OR (\"clinical\".\"risk_scores\".\"score\" >= 0 AND \"clinical\".\"risk_scores\".\"score\" <= 1)"
+        },
+        "risk_scores_rule_codes_nonempty_chk": {
+          "name": "risk_scores_rule_codes_nonempty_chk",
+          "value": "cardinality(\"clinical\".\"risk_scores\".\"rule_codes\") > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "analytics.clinic_daily_metrics": {
+      "name": "clinic_daily_metrics",
+      "schema": "analytics",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metric_date": {
+          "name": "metric_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_patients": {
+          "name": "active_patients",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "check_ins_completed": {
+          "name": "check_ins_completed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "alerts_low": {
+          "name": "alerts_low",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "alerts_medium": {
+          "name": "alerts_medium",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "alerts_high": {
+          "name": "alerts_high",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "matches_pending": {
+          "name": "matches_pending",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "matches_approved": {
+          "name": "matches_approved",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "active_connections": {
+          "name": "active_connections",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "messages_count": {
+          "name": "messages_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "clinic_daily_metrics_date_uidx": {
+          "name": "clinic_daily_metrics_date_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "metric_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "clinic_daily_metrics_metric_date_idx": {
+          "name": "clinic_daily_metrics_metric_date_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "metric_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "clinic_daily_metrics_clinic_id_clinics_id_fk": {
+          "name": "clinic_daily_metrics_clinic_id_clinics_id_fk",
+          "tableFrom": "clinic_daily_metrics",
+          "tableTo": "clinics",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "clinic_daily_metrics_nonnegative_chk": {
+          "name": "clinic_daily_metrics_nonnegative_chk",
+          "value": "\"analytics\".\"clinic_daily_metrics\".\"active_patients\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"check_ins_completed\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"alerts_low\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"alerts_medium\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"alerts_high\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"matches_pending\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"matches_approved\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"active_connections\" >= 0 AND \"analytics\".\"clinic_daily_metrics\".\"messages_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "analytics.events": {
+      "name": "events",
+      "schema": "analytics",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "analytics_event_type",
+          "typeSchema": "analytics",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject_user_id": {
+          "name": "subject_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata_json": {
+          "name": "metadata_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {
+        "events_event_time_idx": {
+          "name": "events_event_time_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "event_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "events_actor_time_idx": {
+          "name": "events_actor_time_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "actor_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "events_clinic_id_clinics_id_fk": {
+          "name": "events_clinic_id_clinics_id_fk",
+          "tableFrom": "events",
+          "tableTo": "clinics",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "events_actor_user_fk": {
+          "name": "events_actor_user_fk",
+          "tableFrom": "events",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "events_subject_user_fk": {
+          "name": "events_subject_user_fk",
+          "tableFrom": "events",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "subject_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "analytics.patient_daily_metrics": {
+      "name": "patient_daily_metrics",
+      "schema": "analytics",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "clinic_id": {
+          "name": "clinic_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patient_user_id": {
+          "name": "patient_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metric_date": {
+          "name": "metric_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "check_in_completed": {
+          "name": "check_in_completed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "mood_value": {
+          "name": "mood_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sleep_value": {
+          "name": "sleep_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active_connections": {
+          "name": "active_connections",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "messages_sent": {
+          "name": "messages_sent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "alerts_count": {
+          "name": "alerts_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "highest_alert_severity": {
+          "name": "highest_alert_severity",
+          "type": "analytics_severity",
+          "typeSchema": "analytics",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "patient_daily_metrics_patient_date_uidx": {
+          "name": "patient_daily_metrics_patient_date_uidx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "metric_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "patient_daily_metrics_patient_date_idx": {
+          "name": "patient_daily_metrics_patient_date_idx",
+          "columns": [
+            {
+              "expression": "clinic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patient_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "metric_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "patient_daily_metrics_patient_user_fk": {
+          "name": "patient_daily_metrics_patient_user_fk",
+          "tableFrom": "patient_daily_metrics",
+          "tableTo": "users",
+          "schemaTo": "social",
+          "columnsFrom": [
+            "clinic_id",
+            "patient_user_id"
+          ],
+          "columnsTo": [
+            "clinic_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "patient_daily_metrics_mood_value_chk": {
+          "name": "patient_daily_metrics_mood_value_chk",
+          "value": "\"analytics\".\"patient_daily_metrics\".\"mood_value\" IS NULL OR (\"analytics\".\"patient_daily_metrics\".\"mood_value\" BETWEEN 1 AND 5)"
+        },
+        "patient_daily_metrics_sleep_value_chk": {
+          "name": "patient_daily_metrics_sleep_value_chk",
+          "value": "\"analytics\".\"patient_daily_metrics\".\"sleep_value\" IS NULL OR (\"analytics\".\"patient_daily_metrics\".\"sleep_value\" BETWEEN 1 AND 5)"
+        },
+        "patient_daily_metrics_nonnegative_chk": {
+          "name": "patient_daily_metrics_nonnegative_chk",
+          "value": "\"analytics\".\"patient_daily_metrics\".\"active_connections\" >= 0 AND \"analytics\".\"patient_daily_metrics\".\"messages_sent\" >= 0 AND \"analytics\".\"patient_daily_metrics\".\"alerts_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "social.clinic_status": {
+      "name": "clinic_status",
+      "schema": "social",
+      "values": [
+        "active",
+        "inactive"
+      ]
+    },
+    "social.connection_status": {
+      "name": "connection_status",
+      "schema": "social",
+      "values": [
+        "pending_approval",
+        "approved",
+        "paused",
+        "rejected",
+        "active",
+        "closed"
+      ]
+    },
+    "social.connection_type": {
+      "name": "connection_type",
+      "schema": "social",
+      "values": [
+        "friendship",
+        "group",
+        "romantic"
+      ]
+    },
+    "social.conversation_member_role": {
+      "name": "conversation_member_role",
+      "schema": "social",
+      "values": [
+        "member",
+        "moderator"
+      ]
+    },
+    "social.conversation_status": {
+      "name": "conversation_status",
+      "schema": "social",
+      "values": [
+        "active",
+        "paused",
+        "closed"
+      ]
+    },
+    "social.conversation_type": {
+      "name": "conversation_type",
+      "schema": "social",
+      "values": [
+        "direct",
+        "group"
+      ]
+    },
+    "social.invitation_status": {
+      "name": "invitation_status",
+      "schema": "social",
+      "values": [
+        "pending",
+        "accepted",
+        "expired",
+        "revoked"
+      ]
+    },
+    "social.match_score_source": {
+      "name": "match_score_source",
+      "schema": "social",
+      "values": [
+        "demo",
+        "calculated"
+      ]
+    },
+    "social.message_report_status": {
+      "name": "message_report_status",
+      "schema": "social",
+      "values": [
+        "open",
+        "reviewed",
+        "dismissed",
+        "actioned"
+      ]
+    },
+    "social.message_type": {
+      "name": "message_type",
+      "schema": "social",
+      "values": [
+        "text",
+        "system"
+      ]
+    },
+    "social.support_group_status": {
+      "name": "support_group_status",
+      "schema": "social",
+      "values": [
+        "active",
+        "paused",
+        "closed"
+      ]
+    },
+    "social.swipe_decision": {
+      "name": "swipe_decision",
+      "schema": "social",
+      "values": [
+        "like",
+        "pass"
+      ]
+    },
+    "social.user_role": {
+      "name": "user_role",
+      "schema": "social",
+      "values": [
+        "doctor",
+        "patient"
+      ]
+    },
+    "social.user_status": {
+      "name": "user_status",
+      "schema": "social",
+      "values": [
+        "invited",
+        "active",
+        "suspended",
+        "inactive"
+      ]
+    },
+    "social.wellness_mission_status": {
+      "name": "wellness_mission_status",
+      "schema": "social",
+      "values": [
+        "assigned",
+        "completed",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "clinical.alert_severity": {
+      "name": "alert_severity",
+      "schema": "clinical",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "clinical.alert_status": {
+      "name": "alert_status",
+      "schema": "clinical",
+      "values": [
+        "open",
+        "managed",
+        "dismissed"
+      ]
+    },
+    "clinical.care_status": {
+      "name": "care_status",
+      "schema": "clinical",
+      "values": [
+        "active",
+        "paused",
+        "discharged"
+      ]
+    },
+    "clinical.consent_status": {
+      "name": "consent_status",
+      "schema": "clinical",
+      "values": [
+        "pending",
+        "accepted",
+        "revoked"
+      ]
+    },
+    "clinical.match_decision": {
+      "name": "match_decision",
+      "schema": "clinical",
+      "values": [
+        "approve",
+        "pause",
+        "reject"
+      ]
+    },
+    "clinical.pulse_rule_code": {
+      "name": "pulse_rule_code",
+      "schema": "clinical",
+      "values": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6"
+      ]
+    },
+    "clinical.risk_level": {
+      "name": "risk_level",
+      "schema": "clinical",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "analytics.analytics_event_type": {
+      "name": "analytics_event_type",
+      "schema": "analytics",
+      "values": [
+        "invitation_created",
+        "invitation_accepted",
+        "profile_completed",
+        "swipe_like",
+        "mutual_match",
+        "match_approved",
+        "conversation_started",
+        "check_in_completed",
+        "alert_created",
+        "mission_completed"
+      ]
+    },
+    "analytics.analytics_severity": {
+      "name": "analytics_severity",
+      "schema": "analytics",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ]
+    }
+  },
+  "schemas": {
+    "social": "social",
+    "clinical": "clinical",
+    "analytics": "analytics"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

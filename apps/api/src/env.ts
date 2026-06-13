@@ -13,6 +13,10 @@ const envSchema = z.object({
   REDIS_URL: z.string().url().default("redis://localhost:6379"),
   API_PORT: z.coerce.number().int().positive().default(3001),
   API_HOST: z.string().default("0.0.0.0"),
+  FRONTEND_ORIGINS: z
+    .string()
+    .default("http://localhost:5173,http://localhost:5174"),
+  PATIENT_APP_URL: z.string().url().default("http://localhost:5173"),
   JWT_SECRET: z.string().min(8),
   JWT_REFRESH_SECRET: z.string().min(8),
   JWT_ACCESS_TTL: z.coerce.number().int().positive().default(900),
@@ -23,9 +27,14 @@ const envSchema = z.object({
     .default("true")
     .transform((v) => v === "true"),
   ANTHROPIC_API_KEY: z.string().optional(),
+  DEMO_DOCTOR_EMAIL: z.string().email().default("doctora@demo.com"),
+  DEMO_DOCTOR_PASSWORD: z.string().min(8).default("Demo123!"),
 });
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse({
+  ...process.env,
+  NODE_ENV: process.env.NODE_ENV === "test" ? "demo" : process.env.NODE_ENV,
+});
 
 if (!parsed.success) {
   console.error("❌ Variables de entorno inválidas:");
@@ -37,3 +46,7 @@ export const env = parsed.data;
 export type Env = typeof env;
 
 export const isDemo = env.NODE_ENV === "demo";
+
+export const frontendOrigins = env.FRONTEND_ORIGINS.split(",")
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);

@@ -25,6 +25,7 @@ Tablas:
 - `social.refresh_tokens`: almacena solo hashes de refresh tokens.
 - `social.invitations`: invitaciones creadas por doctora. Valida mayoria de edad y tipos permitidos de conexion.
 - `social.patient_profiles`: perfil social del paciente, uno por usuario, con validacion de mayoria de edad.
+- `social.patient_profiles.source_invitation_id`: relaciona de forma estable el perfil con la invitacion que autorizo sus tipos de conexion. Es nullable solo para compatibilidad con perfiles historicos o administrativos.
 - `social.interests`: catalogo de intereses por clinica.
 - `social.patient_interests`: relacion perfil-interes, con `weight` entre 1 y 5.
 - `social.profile_embeddings`: embedding vigente por perfil y modelo. En Fase 0 usa `vector(1536)` sin llamadas externas; la dimension podra migrarse si el proveedor definitivo usa otra dimension.
@@ -67,6 +68,7 @@ Tablas:
 - `social.users.clinic_id` referencia `social.clinics`.
 - Todas las tablas de tenant referencian la clinica directa o indirectamente y exponen `clinic_id`.
 - Las relaciones entre tablas de un mismo tenant usan FKs compuestas `clinic_id + id` cuando la pertenencia a clinica debe quedar protegida en base de datos.
+- `social.patient_profiles.source_invitation_id` referencia `social.invitations.id`; el servicio valida que invitacion y perfil pertenezcan al mismo `clinic_id`.
 - `clinical` referencia `social.users` y `social.connections`.
 - `analytics` referencia `social.clinics` y, para actor/sujeto operacional, `social.users`.
 - No existe ninguna FK de `social` hacia `clinical`.
@@ -84,6 +86,7 @@ Tablas:
 - `social.clinics` es el tenant raiz.
 - Cada tabla de tenant incluye `clinic_id`.
 - Las claves unicas compuestas incluyen `clinic_id` cuando la unicidad pertenece a una clinica.
+- `source_invitation_id` es unico cuando existe: una invitacion solo puede originar un perfil.
 - Los indices principales incluyen `clinic_id` para filtrar por tenant desde el primer dia.
 
 ## Limitaciones del demo
@@ -94,6 +97,7 @@ Tablas:
 - No hay seed funcional ni endpoints de Fase 1.
 - No se generan embeddings reales ni se llama a proveedores externos.
 - Las metricas analytics son estructura persistente, no pipelines de agregacion.
+- El flujo publico `POST /invitations/validate` forma parte de la aceptacion por invitacion y no habilita registro abierto.
 
 ## Pendientes de produccion
 
@@ -103,3 +107,4 @@ Tablas:
 - Auditoria avanzada de accesos clinicos.
 - Rotacion y endurecimiento de secretos.
 - Estrategia de migracion de dimensiones de embeddings si cambia el proveedor.
+- Familias de refresh tokens para deteccion avanzada de reutilizacion en produccion.
