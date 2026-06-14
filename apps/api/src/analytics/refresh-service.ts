@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gte, isNull, lte, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { db, schema } from "../db";
 import type { Transaction } from "../matching/types";
+import { alertBusinessDateExpr } from "../domain/alert-date";
 import { todayForClinic } from "../pulse/business-clock";
 import { addDays, dateRange } from "../pulse/dates";
 import { advisoryTransactionLock } from "../pulse/locks";
@@ -31,6 +32,20 @@ export interface RefreshResult {
  * escribe el snapshot operativo ACTUAL únicamente en la fila de `today`.
  * Idempotente (upsert). Recibe un executor (tx); el caller decide la transacción
  * y el advisory lock. No borra la tabla ni toca otras clínicas.
+ *
+ * SEMÁNTICA DE COLUMNAS (auditoría de honestidad de snapshots):
+ * - Históricas EXACTAS por fecha (reconstruibles desde eventos con fecha):
+ *   clinic_daily: checkInsCompleted, messagesCount, alertsLow/Medium/High,
+ *   matchesApproved. patient_daily: checkInCompleted, moodValue, sleepValue,
+ *   messagesSent, alertsCount, highestAlertSeverity.
+ * - OPERATIVAS de estado actual (NO reconstruibles históricamente; columnas
+ *   NOT NULL): clinic_daily.activePatients/matchesPending/activeConnections y
+ *   patient_daily.activeConnections. Se escriben con el valor real SOLO en la
+ *   fila de `today`; en fechas pasadas quedan en 0 TÉCNICO. Ese 0 NO significa
+ *   "no había" — significa "no disponible históricamente". Para no presentarlo
+ *   como hecho, NINGÚN endpoint/chart de Fase 6 los lee: las cifras operativas
+ *   se calculan en vivo desde las tablas fuente (dashboard summary y matching);
+ *   solo la fila de `today` es un snapshot válido. (Sin migración: ver README.)
  */
 export async function refreshAnalytics(
   ex: Transaction,
@@ -89,10 +104,11 @@ export async function refreshAnalytics(
       schema.messages.senderUserId,
     );
 
-  // Alertas por (patient, dateBogota, severity).
+  // Alertas por (patient, fecha de negocio, severity).
+  const alertDate = alertBusinessDateExpr();
   const alertRows = await ex
     .select({
-      date: bogotaDate(schema.alerts.triggeredAt),
+      date: alertDate,
       patientUserId: schema.alerts.patientUserId,
       severity: schema.alerts.severity,
       count: sql<number>`count(*)::int`,
@@ -101,12 +117,12 @@ export async function refreshAnalytics(
     .where(
       and(
         eq(schema.alerts.clinicId, clinicId),
-        gte(bogotaDate(schema.alerts.triggeredAt), from),
-        lte(bogotaDate(schema.alerts.triggeredAt), to),
+        gte(alertDate, from),
+        lte(alertDate, to),
       ),
     )
     .groupBy(
-      bogotaDate(schema.alerts.triggeredAt),
+      alertDate,
       schema.alerts.patientUserId,
       schema.alerts.severity,
     );

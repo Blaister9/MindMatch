@@ -299,3 +299,25 @@ pnpm analytics:refresh                      # rellena snapshots (correr DESPUÉS
   normales se refrescan tras la evaluación diaria del scheduler de Pulso.
 - `analytics.events` queda reservado para una evolución futura de
   instrumentación explícita.
+
+### Microfase de integridad (post-Fase 6)
+
+- **Fecha de negocio de las alertas:** las alertas R1–R5 se ubican por su fecha
+  lógica `inputs_json.asOfDate` (la que evaluó el motor, p. ej. con el reloj
+  demo); R6 usa la fecha Bogotá de `triggered_at`. Si una alerta R1–R5 histórica
+  no tuviera un `asOfDate` válido, cae al `triggered_at` y se cuenta como
+  fallback (sin exponer `inputs_json`). Esta semántica única se usa en
+  `openAlertsToday`, en `analytics:refresh` y en `GET /doctor/analytics/alerts`.
+  `triggered_at` se conserva intacto para auditoría.
+- **Embudo:** además de `dataQualityWarning`, el DTO incluye
+  `dataQualityIssues` (etapas y conteos) cuando una etapa supera a la anterior.
+  Los conteos reales nunca se ajustan ni se inventan swipes; el aviso es
+  informativo.
+- **Snapshots operativos:** `clinic_daily_metrics.{activePatients,
+  matchesPending,activeConnections}` y `patient_daily_metrics.activeConnections`
+  son estado actual NO reconstruible históricamente. Solo la fila del día actual
+  contiene el valor real; en fechas pasadas quedan en `0` técnico (la columna es
+  `NOT NULL`). Ese `0` significa "no disponible", no "no había": **ningún
+  endpoint ni gráfica lo lee** — las cifras operativas se calculan en vivo desde
+  las tablas fuente. No se requiere migración. Las métricas históricas exactas
+  (ánimo, sueño, check-ins, mensajes, alertas por día) sí son fidedignas.

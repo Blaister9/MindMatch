@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte, or, sql, type AnyColumn, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type {
   DashboardSummary,
   PatientCard,
@@ -6,13 +6,10 @@ import type {
 } from "@mindmatch/shared";
 import { db, schema } from "../db";
 import { env } from "../env";
+import { alertBusinessDateExpr } from "../domain/alert-date";
 import { isDemoClinic, todayForClinic } from "../pulse/business-clock";
 import { getHistory } from "../pulse/pulse-service";
 import { classifyPatientStatus } from "./patient-status";
-
-function bogotaDate(col: AnyColumn): SQL<string> {
-  return sql<string>`(${col} at time zone 'America/Bogota')::date`;
-}
 
 export async function getDashboardSummary(clinicId: string): Promise<DashboardSummary> {
   const today = await todayForClinic(db, clinicId);
@@ -54,7 +51,7 @@ export async function getDashboardSummary(clinicId: string): Promise<DashboardSu
       and(
         eq(schema.alerts.clinicId, clinicId),
         eq(schema.alerts.status, "open"),
-        eq(bogotaDate(schema.alerts.triggeredAt), today),
+        eq(alertBusinessDateExpr(), today),
       ),
     );
 

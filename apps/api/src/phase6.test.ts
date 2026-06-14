@@ -6,7 +6,12 @@ import { buildApp } from "./app";
 import { db, queryClient, schema } from "./db";
 import { classifyPatientStatus } from "./dashboard/patient-status";
 import { runClinicAnalyticsRefresh } from "./analytics/refresh-service";
-import { getFunnel, getMatchingMetrics, getMoodSeries } from "./analytics/analytics-service";
+import {
+  getAlertsAggregation,
+  getFunnel,
+  getMatchingMetrics,
+  getMoodSeries,
+} from "./analytics/analytics-service";
 import { bogotaTodayYmd } from "./domain/dates";
 import { addDays } from "./pulse/dates";
 import { canonicalUuidPair } from "./domain/pairs";
@@ -145,7 +150,10 @@ async function createAlert(
   severity: "low" | "medium" | "high",
   status: "open" | "managed" = "open",
   ruleCode: "R1" | "R2" | "R3" | "R4" | "R5" | "R6" = "R1",
+  opts: { asOfDate?: string | null; triggeredAt?: Date } = {},
 ) {
+  const inputs: Record<string, unknown> = {};
+  if (opts.asOfDate !== null) inputs.asOfDate = opts.asOfDate ?? TODAY;
   await db.insert(schema.alerts).values({
     id: randomUUID(),
     clinicId,
@@ -153,8 +161,8 @@ async function createAlert(
     ruleCode,
     severity,
     status,
-    inputsJson: { asOfDate: TODAY },
-    triggeredAt: new Date(),
+    inputsJson: inputs,
+    triggeredAt: opts.triggeredAt ?? new Date(),
   });
 }
 
@@ -490,6 +498,23 @@ describe("fase 6 analytics", () => {
     // Paciente fuera de la cohorte (sin invitación en rango) con actividad.
     const outsider = await createPatient(clinic.id, doctor.id);
     await createCheckIn(clinic.id, outsider.user.id, TODAY, 5);
+    // El miembro avanza swipe + conexión activa para que el embudo sea monótono.
+    await db.insert(schema.swipes).values({
+      id: randomUUID(),
+      clinicId: clinic.id,
+      actorPatientId: member.profile.id,
+      targetPatientId: outsider.profile.id,
+      decision: "like",
+    });
+    const [ca, cb] = canonicalUuidPair(member.profile.id, outsider.profile.id);
+    await db.insert(schema.connections).values({
+      id: randomUUID(),
+      clinicId: clinic.id,
+      patientAId: ca,
+      patientBId: cb,
+      connectionType: "friendship",
+      status: "active",
+    });
 
     const funnel = await getFunnel(db, clinic.id, TODAY, null);
     const invited = funnel.stages.find((s) => s.key === "invited")!.patients;
@@ -499,5 +524,145 @@ describe("fase 6 analytics", () => {
     expect(checkedIn).toBe(1); // solo el de la cohorte, no el outsider
     expect(messaged).toBe(1); // 3 mensajes → 1 paciente
     expect(funnel.dataQualityWarning).toBe(false);
+    expect(funnel.dataQualityIssues).toHaveLength(0);
+  });
+
+  it("embudo: connected > swiped genera issue sin alterar conteos", async () => {
+    const clinic = await createClinic();
+    const doctor = await createDoctor(clinic.id);
+    const [inv] = await db
+      .insert(schema.invitations)
+      .values({
+        id: randomUUID(),
+        clinicId: clinic.id,
+        createdByUserId: doctor.id,
+        email: `coh2-${randomUUID()}@demo.com`,
+        patientName: "Cohorte2",
+        birthDate: "1996-01-01",
+        allowedConnectionTypes: ["friendship"],
+        restrictionsJson: {},
+        tokenHash: randomUUID(),
+        status: "accepted",
+        expiresAt: new Date(Date.now() + 86_400_000),
+        acceptedAt: new Date(),
+      })
+      .returning();
+    const member = await createPatient(clinic.id, doctor.id);
+    const partner = await createPatient(clinic.id, doctor.id);
+    await db
+      .update(schema.patientProfiles)
+      .set({ sourceInvitationId: inv!.id })
+      .where(eq(schema.patientProfiles.id, member.profile.id));
+    // Conexión activa SIN swipe previo (inconsistencia heredada típica del seed).
+    const [ca, cb] = canonicalUuidPair(member.profile.id, partner.profile.id);
+    await db.insert(schema.connections).values({
+      id: randomUUID(),
+      clinicId: clinic.id,
+      patientAId: ca,
+      patientBId: cb,
+      connectionType: "friendship",
+      status: "active",
+    });
+
+    const funnel = await getFunnel(db, clinic.id, TODAY, null);
+    expect(funnel.dataQualityWarning).toBe(true);
+    const issue = funnel.dataQualityIssues.find(
+      (i) => i.previousStage === "swiped" && i.currentStage === "connected",
+    );
+    expect(issue).toEqual({ previousStage: "swiped", currentStage: "connected", previousCount: 0, currentCount: 1 });
+    // Conteos reales intactos.
+    expect(funnel.stages.find((s) => s.key === "swiped")!.patients).toBe(0);
+    expect(funnel.stages.find((s) => s.key === "connected")!.patients).toBe(1);
+  });
+});
+
+describe("microfase: fecha de negocio de alertas", () => {
+  it("openAlertsToday usa asOfDate (R1-R5) y triggered_at (R6)", async () => {
+    const clinic = await createClinic();
+    const doctor = await createDoctor(clinic.id);
+    const patient = await createPatient(clinic.id, doctor.id);
+    // A: R1 con asOfDate=hoy pero triggered_at viejo → cuenta hoy.
+    await createAlert(clinic.id, patient.user.id, "high", "open", "R1", {
+      asOfDate: TODAY,
+      triggeredAt: new Date("2020-01-01T12:00:00Z"),
+    });
+    // B: R1 con asOfDate=-5 pero triggered_at ahora → NO cuenta hoy.
+    await createAlert(clinic.id, patient.user.id, "medium", "open", "R1", {
+      asOfDate: addDays(TODAY, -5),
+      triggeredAt: new Date(),
+    });
+    // C: R6 sin asOfDate, triggered_at ahora → cuenta hoy (usa triggered_at).
+    await createAlert(clinic.id, patient.user.id, "high", "open", "R6", { asOfDate: null });
+
+    const token = await tokenFor(clinic.slug, doctor.email);
+    const sum = (await app.inject({ method: "GET", url: "/doctor/dashboard/summary", headers: bearer(token) })).json<{
+      openAlertsTotal: number;
+      openAlertsToday: number;
+    }>();
+    expect(sum.openAlertsTotal).toBe(3);
+    expect(sum.openAlertsToday).toBe(2); // A + C, no B
+  });
+
+  it("agregación de alertas usa fecha de negocio y cuenta fallback", async () => {
+    const clinic = await createClinic();
+    const doctor = await createDoctor(clinic.id);
+    const patient = await createPatient(clinic.id, doctor.id);
+    // R1 con asOfDate=hoy, triggered viejo → dentro del rango [hoy,hoy].
+    await createAlert(clinic.id, patient.user.id, "high", "open", "R1", {
+      asOfDate: TODAY,
+      triggeredAt: new Date("2020-01-01T12:00:00Z"),
+    });
+    // R2 sin asOfDate válido, triggered hoy → fallback a triggered_at (hoy).
+    await createAlert(clinic.id, patient.user.id, "high", "open", "R2", {
+      asOfDate: null,
+      triggeredAt: new Date(),
+    });
+    const agg = await getAlertsAggregation(db, clinic.id, TODAY, TODAY);
+    expect(agg.total).toBe(2);
+    expect(agg.fallbackCount).toBe(1);
+    const r1 = agg.byRuleCode.find((r) => r.ruleCode === "R1");
+    expect(r1?.count).toBe(1);
+  });
+});
+
+describe("microfase: integridad de snapshots", () => {
+  it("operativos históricos quedan en 0 y no se exponen como hechos", async () => {
+    const clinic = await createClinic();
+    const doctor = await createDoctor(clinic.id);
+    const p1 = await createPatient(clinic.id, doctor.id);
+    const p2 = await createPatient(clinic.id, doctor.id);
+    // conexión activa actual + check-in pasado.
+    const [a, b] = canonicalUuidPair(p1.profile.id, p2.profile.id);
+    await db.insert(schema.connections).values({ id: randomUUID(), clinicId: clinic.id, patientAId: a, patientBId: b, connectionType: "friendship", status: "active" });
+    await createCheckIn(clinic.id, p1.user.id, addDays(TODAY, -3), 3);
+
+    await runClinicAnalyticsRefresh(clinic.id);
+
+    // Fechas pasadas: operativos = 0 técnico (no estado actual repetido).
+    const [past] = await db
+      .select({
+        active: schema.clinicDailyMetrics.activeConnections,
+        pending: schema.clinicDailyMetrics.matchesPending,
+        patients: schema.clinicDailyMetrics.activePatients,
+        checks: schema.clinicDailyMetrics.checkInsCompleted,
+      })
+      .from(schema.clinicDailyMetrics)
+      .where(and(eq(schema.clinicDailyMetrics.clinicId, clinic.id), eq(schema.clinicDailyMetrics.metricDate, addDays(TODAY, -3))));
+    expect(past?.active).toBe(0);
+    expect(past?.pending).toBe(0);
+    expect(past?.patients).toBe(0);
+    expect(past?.checks).toBe(1); // histórico exacto sí
+
+    // patient_daily.activeConnections siempre 0 (no reconstruido).
+    const [pdm] = await db
+      .select({ active: schema.patientDailyMetrics.activeConnections, mood: schema.patientDailyMetrics.moodValue })
+      .from(schema.patientDailyMetrics)
+      .where(and(eq(schema.patientDailyMetrics.clinicId, clinic.id), eq(schema.patientDailyMetrics.patientUserId, p1.user.id), eq(schema.patientDailyMetrics.metricDate, addDays(TODAY, -3))));
+    expect(pdm?.active).toBe(0);
+    expect(pdm?.mood).toBe(3);
+
+    // El endpoint de matching expone el estado actual desde la fuente (1), no el 0 histórico.
+    const m = await getMatchingMetrics(db, clinic.id);
+    expect(m.activeConnections).toBe(1);
   });
 });

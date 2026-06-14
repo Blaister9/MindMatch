@@ -1,12 +1,14 @@
 import { and, eq, gte, inArray, lte, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type {
   AlertsAggregationResponse,
+  FunnelDataQualityIssue,
   FunnelResponse,
   FunnelStage,
   MatchingMetricsResponse,
   MoodSeriesResponse,
 } from "@mindmatch/shared";
 import { db, schema } from "../db";
+import { alertAsOfFallbackExpr, alertBusinessDateExpr } from "../domain/alert-date";
 import type { Reader } from "../matching/types";
 import { dateRange } from "../pulse/dates";
 
@@ -59,7 +61,9 @@ export async function getAlertsAggregation(
   from: string,
   to: string,
 ): Promise<AlertsAggregationResponse> {
-  const dateExpr = bogotaDate(schema.alerts.triggeredAt);
+  // Fecha de negocio de la alerta (asOfDate para R1–R5, triggered_at para R6).
+  const dateExpr = alertBusinessDateExpr();
+  const monthExpr = sql<string>`to_char(${dateExpr}, 'YYYY-MM')`;
   const where = and(
     eq(schema.alerts.clinicId, clinicId),
     gte(dateExpr, from),
@@ -77,14 +81,15 @@ export async function getAlertsAggregation(
     .where(where)
     .groupBy(schema.alerts.severity);
   const monthly = await ex
-    .select({
-      period: sql<string>`to_char((${schema.alerts.triggeredAt} at time zone 'America/Bogota'), 'YYYY-MM')`,
-      count: sql<number>`count(*)::int`,
-    })
+    .select({ period: monthExpr, count: sql<number>`count(*)::int` })
     .from(schema.alerts)
     .where(where)
-    .groupBy(sql`to_char((${schema.alerts.triggeredAt} at time zone 'America/Bogota'), 'YYYY-MM')`)
-    .orderBy(sql`to_char((${schema.alerts.triggeredAt} at time zone 'America/Bogota'), 'YYYY-MM')`);
+    .groupBy(monthExpr)
+    .orderBy(monthExpr);
+  const [fallback] = await ex
+    .select({ n: sql<number>`count(*) filter (where ${alertAsOfFallbackExpr()})::int` })
+    .from(schema.alerts)
+    .where(where);
 
   const total = byRule.reduce((acc, r) => acc + r.count, 0);
   return {
@@ -94,6 +99,7 @@ export async function getAlertsAggregation(
     byRuleCode: byRule.map((r) => ({ ruleCode: r.ruleCode, count: r.count })),
     bySeverity: bySeverity.map((r) => ({ severity: r.severity, count: r.count })),
     monthlySeries: monthly.map((r) => ({ period: r.period, count: r.count })),
+    fallbackCount: fallback?.n ?? 0,
   };
 }
 
@@ -279,19 +285,28 @@ export async function getFunnel(
     (key) => ({ key, label: FUNNEL_LABELS[key], patients: counts[key] }),
   );
 
-  const monotonicPrefix =
-    invited >= accepted && accepted >= profileCompleted && profileCompleted >= swiped;
-  const laterWithinCohort = [connected, activeConnection, messaged, checkedIn].every(
-    (v) => v <= accepted,
-  );
-  const activeWithinConnected = activeConnection <= connected;
-  const dataQualityWarning = !(monotonicPrefix && laterWithinCohort && activeWithinConnected);
+  // Una etapa nunca debería superar a la inmediatamente anterior. Reportamos
+  // cada aumento como un issue estructurado, SIN modificar los conteos reales.
+  const issues: FunnelDataQualityIssue[] = [];
+  for (let i = 1; i < stages.length; i += 1) {
+    const previous = stages[i - 1]!;
+    const current = stages[i]!;
+    if (current.patients > previous.patients) {
+      issues.push({
+        previousStage: previous.key,
+        currentStage: current.key,
+        previousCount: previous.patients,
+        currentCount: current.patients,
+      });
+    }
+  }
 
   return {
     from,
     to,
     cohortLabel: "Conversión de pacientes invitados en el periodo",
     stages,
-    dataQualityWarning,
+    dataQualityWarning: issues.length > 0,
+    dataQualityIssues: issues,
   };
 }

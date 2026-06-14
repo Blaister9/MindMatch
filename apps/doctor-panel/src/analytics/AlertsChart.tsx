@@ -50,6 +50,12 @@ export function AlertsChart({ token }: { token: string }) {
         Total: {data?.total ?? 0} ·{" "}
         {(data?.bySeverity ?? []).map((s) => `${s.severity}: ${s.count}`).join(" · ")}
       </p>
+      {(data?.fallbackCount ?? 0) > 0 && (
+        <p className="mt-1 text-xs text-amber-700">
+          {data?.fallbackCount} alerta(s) sin fecha lógica registrada usan la fecha de
+          disparo como aproximación.
+        </p>
+      )}
     </ChartShell>
   );
 }

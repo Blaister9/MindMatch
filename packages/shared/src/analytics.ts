@@ -41,6 +41,8 @@ export const alertsAggregationResponseSchema = z.object({
   monthlySeries: z.array(
     z.object({ period: z.string(), count: z.number().int() }),
   ),
+  /** Alertas R1–R5 sin asOfDate válido que cayeron al fallback triggered_at. */
+  fallbackCount: z.number().int(),
 });
 export type AlertsAggregationResponse = z.infer<
   typeof alertsAggregationResponseSchema
@@ -79,12 +81,21 @@ export const funnelStageSchema = z.object({
 });
 export type FunnelStage = z.infer<typeof funnelStageSchema>;
 
+export const funnelDataQualityIssueSchema = z.object({
+  previousStage: funnelStageKeySchema,
+  currentStage: funnelStageKeySchema,
+  previousCount: z.number().int(),
+  currentCount: z.number().int(),
+});
+export type FunnelDataQualityIssue = z.infer<typeof funnelDataQualityIssueSchema>;
+
 export const funnelResponseSchema = z.object({
   from: z.string().nullable(),
   to: z.string(),
   cohortLabel: z.string(),
   stages: z.array(funnelStageSchema),
   dataQualityWarning: z.boolean(),
+  dataQualityIssues: z.array(funnelDataQualityIssueSchema),
 });
 export type FunnelResponse = z.infer<typeof funnelResponseSchema>;
 

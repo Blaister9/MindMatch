@@ -45,9 +45,20 @@ export function AdoptionFunnel({ token }: { token: string }) {
         ))}
       </ul>
       {data?.dataQualityWarning && (
-        <p className="mt-2 text-xs text-amber-700">
-          ⚠ Algunas etapas presentan inconsistencias de datos históricos; se muestran los conteos reales.
-        </p>
+        <div className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
+          <p>
+            Los datos históricos contienen etapas posteriores sin registro de una
+            etapa previa. Los valores se muestran sin ajustes.
+          </p>
+          <ul className="mt-1 list-disc pl-4">
+            {data.dataQualityIssues.map((issue) => (
+              <li key={`${issue.previousStage}-${issue.currentStage}`}>
+                {issue.currentStage} ({issue.currentCount}) &gt; {issue.previousStage} (
+                {issue.previousCount})
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </ChartShell>
   );
