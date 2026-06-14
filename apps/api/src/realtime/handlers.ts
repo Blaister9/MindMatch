@@ -16,6 +16,7 @@ import {
 } from "../services/conversation-access";
 import { sendMessage, toPublicMessage } from "../services/message-service";
 import type { AppIoServer, AppSocket } from "./events";
+import type { RealtimeOptions } from "./io";
 import { allowMessage, allowTyping, MAX_ROOMS_PER_SOCKET } from "./rate-limit";
 import { conversationRoom, doctorsRoom, userRoom } from "./rooms";
 import { typingRegistry } from "./typing";
@@ -48,7 +49,11 @@ async function resolveDisplayName(clinicId: string, userId: string): Promise<str
   return name;
 }
 
-export function registerSocketHandlers(io: AppIoServer, socket: AppSocket): void {
+export function registerSocketHandlers(
+  io: AppIoServer,
+  socket: AppSocket,
+  options: RealtimeOptions = {},
+): void {
   const { userId, clinicId, role, exp } = socket.data;
 
   // Auto-join: doctora a la sala admin; paciente a su sala personal.
@@ -82,10 +87,10 @@ export function registerSocketHandlers(io: AppIoServer, socket: AppSocket): void
     void handleSend(io, socket, payload, ack);
   });
   socket.on("typing:start", (payload) => {
-    void handleTyping(io, socket, payload, true);
+    void handleTyping(io, socket, payload, true, options);
   });
   socket.on("typing:stop", (payload) => {
-    void handleTyping(io, socket, payload, false);
+    void handleTyping(io, socket, payload, false, options);
   });
 
   socket.on("disconnect", () => {
@@ -212,6 +217,7 @@ async function handleTyping(
   socket: AppSocket,
   payload: unknown,
   isStart: boolean,
+  options: RealtimeOptions,
 ): Promise<void> {
   const parsed = typingInputSchema.safeParse(payload);
   if (!parsed.success || socket.data.role !== "patient") return;
@@ -242,5 +248,5 @@ async function handleTyping(
       displayName: "",
       isTyping: false,
     });
-  });
+  }, options.typingExpiryMs);
 }

@@ -11,7 +11,11 @@ import { typingRegistry } from "./typing";
  * instancia Fastify (guarda `hasDecorator`). Cierre limpio vía hook `onClose`,
  * que limpia timers y cierra los sockets antes de completar el shutdown.
  */
-export function attachRealtime(app: FastifyInstance): void {
+export interface RealtimeOptions {
+  typingExpiryMs?: number;
+}
+
+export function attachRealtime(app: FastifyInstance, options: RealtimeOptions = {}): void {
   if (app.hasDecorator("io")) return;
 
   const io: AppIoServer = new Server(app.server, {
@@ -21,7 +25,7 @@ export function attachRealtime(app: FastifyInstance): void {
   });
 
   io.use(socketAuthMiddleware(app));
-  io.on("connection", (socket) => registerSocketHandlers(io, socket));
+  io.on("connection", (socket) => registerSocketHandlers(io, socket, options));
 
   app.decorate("io", io);
 

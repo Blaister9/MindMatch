@@ -5,7 +5,12 @@ class TypingRegistry {
   private timers = new Map<string, Map<string, NodeJS.Timeout>>();
 
   /** Inicia/reinicia el timer; al vencer invoca onExpire (emite isTyping:false). */
-  start(socketId: string, conversationId: string, onExpire: () => void): void {
+  start(
+    socketId: string,
+    conversationId: string,
+    onExpire: () => void,
+    expiryMs = TYPING_MAX_MS,
+  ): void {
     let perSocket = this.timers.get(socketId);
     if (!perSocket) {
       perSocket = new Map();
@@ -18,7 +23,7 @@ class TypingRegistry {
       map?.delete(conversationId);
       if (map && map.size === 0) this.timers.delete(socketId);
       onExpire();
-    }, TYPING_MAX_MS);
+    }, expiryMs);
     // No mantener el proceso vivo solo por este timer.
     if (typeof timer.unref === "function") timer.unref();
     perSocket.set(conversationId, timer);

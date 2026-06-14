@@ -18,6 +18,8 @@ import { env, frontendOrigins } from "./env";
 export interface BuildAppOptions {
   /** Adjunta Socket.io al servidor HTTP. true en runtime real y tests realtime. */
   enableRealtime?: boolean;
+  /** Solo tests: reduce la expiracion de typing sin cambiar runtime. */
+  typingExpiryMs?: number;
 }
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
@@ -113,7 +115,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   app.register(pulseRoutes);
 
   if (options.enableRealtime) {
-    attachRealtime(app);
+    attachRealtime(app, { typingExpiryMs: options.typingExpiryMs });
   }
 
   return app;

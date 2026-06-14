@@ -26,7 +26,7 @@ let realtimeUrl: string;
 beforeAll(async () => {
   restApp = buildApp();
   await restApp.ready();
-  realtimeApp = buildApp({ enableRealtime: true });
+  realtimeApp = buildApp({ enableRealtime: true, typingExpiryMs: 100 });
   await realtimeApp.listen({ port: 0, host: "127.0.0.1" });
   const address = realtimeApp.server.address();
   if (!address || typeof address === "string") throw new Error("missing server address");
