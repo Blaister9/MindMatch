@@ -321,3 +321,27 @@ pnpm analytics:refresh                      # rellena snapshots (correr DESPUÉS
   endpoint ni gráfica lo lee** — las cifras operativas se calculan en vivo desde
   las tablas fuente. No se requiere migración. Las métricas históricas exactas
   (ánimo, sueño, check-ins, mensajes, alertas por día) sí son fidedignas.
+
+### Runtime compilado de la API
+
+Desarrollo usa TypeScript en watch:
+
+```bash
+pnpm --filter @mindmatch/api dev
+```
+
+El runtime compilado se construye y arranca con JavaScript emitido en `dist`:
+
+```bash
+pnpm --filter @mindmatch/api build
+pnpm --filter @mindmatch/api start
+```
+
+El build de la API ejecuta `tsc` y luego normaliza los imports ESM relativos del
+artefacto para que Node 22 pueda resolverlos sin loaders ni flags
+experimentales. `start` respeta las variables del `.env` de la raiz, no activa
+watch y debe responder:
+
+```bash
+curl http://127.0.0.1:3001/health
+```

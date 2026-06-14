@@ -47,6 +47,7 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse({
   ...process.env,
+  API_PORT: process.env.PORT ?? process.env.API_PORT,
   NODE_ENV: process.env.NODE_ENV === "test" ? "demo" : process.env.NODE_ENV,
 });
 
