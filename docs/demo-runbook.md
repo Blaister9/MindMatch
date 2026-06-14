@@ -67,8 +67,9 @@ es opcional para no arriesgar tiempo.
 
 | Sintoma | Diagnostico | Comando | Tiempo | Riesgo |
 |---|---|---|---|---|
-| API no responde | Proceso caido o puerto ocupado | `pnpm demo:doctor`; `pnpm demo:start -- --service api` | 10s | Bajo |
-| Frontend no carga | Preview caido | `pnpm demo:start -- --service patient` o `doctor` | 10s | Bajo |
+| API no responde | Proceso caido o puerto ocupado | `pnpm demo:stop -- --service api`; `pnpm demo:start -- --service api` | 10s | Bajo |
+| Frontend paciente no carga | Preview caido | `pnpm demo:stop -- --service patient`; `pnpm demo:start -- --service patient` | 10s | Bajo |
+| Frontend doctora no carga | Preview caido | `pnpm demo:stop -- --service doctor`; `pnpm demo:start -- --service doctor` | 10s | Bajo |
 | Socket.io no conecta | API o sesion vieja | refrescar pestana; `pnpm demo:check` | 30s | Bajo |
 | Docker detenido | Infra no disponible | iniciar Docker; `docker compose up -d` | 1-3m | Medio |
 | DB no healthy | Contenedor inicializando o roto | `docker compose ps` | 1m | Medio |
@@ -81,6 +82,38 @@ es opcional para no arriesgar tiempo.
 Si Docker falla antes del evento: intenta iniciar Docker y usar contenedores ya
 preparados si siguen healthy. No borres volumenes. Si no hay DB accesible, el
 demo interactivo queda bloqueado; usa material preparado fuera de este runbook.
+
+### Recuperacion parcial por servicio (oficial)
+
+Cada servicio se reinicia de forma aislada sin tocar a los demas. Es la via oficial
+de recuperacion: NO hace falta detener los tres servicios.
+
+```bash
+# API
+pnpm demo:stop -- --service api
+pnpm demo:start -- --service api
+
+# Paciente
+pnpm demo:stop -- --service patient
+pnpm demo:start -- --service patient
+
+# Doctora
+pnpm demo:stop -- --service doctor
+pnpm demo:start -- --service doctor
+```
+
+Notas:
+
+- `--service` acepta `api`, `patient` o `doctor` (con espacio o con `=`). Sin la
+  bandera se opera sobre los tres.
+- `demo:start -- --service X` solo valida el puerto de X; los servicios hermanos
+  activos y sus procesos hijos legitimos (pnpm -> vite) no se tratan como conflicto.
+- Si el servicio ya esta vivo y verificado, el arranque es idempotente y no crea
+  una segunda copia.
+- Igual que `pnpm dev`, cada `demo:start` queda adjunto a sus procesos: dejalo
+  corriendo en su terminal y verifica con `pnpm demo:check` desde otra terminal.
+- `demo:stop` (total o por servicio) nunca detiene Docker ni mata procesos ajenos
+  al arbol verificado del servicio.
 
 ## Cierre
 
