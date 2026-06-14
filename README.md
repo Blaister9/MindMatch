@@ -345,3 +345,23 @@ watch y debe responder:
 ```bash
 curl http://127.0.0.1:3001/health
 ```
+
+## Release Candidate local
+
+RC actual: `0.1.0-rc.1` (`VERSION`). El recorrido oficial del demo usa Docker
+Compose para PostgreSQL/Redis, API compilada (`node apps/api/dist/index.js`) y
+frontends compilados servidos con `vite preview`; no usa watch, Vite dev server
+ni `tsx` para arrancar la API.
+
+```bash
+pnpm demo:init
+pnpm demo:doctor
+pnpm demo:prepare -- --reset --confirm-reset=mindmatch-demo
+pnpm demo:start
+pnpm demo:check -- --expect-clean
+pnpm demo:stop
+```
+
+Los comandos cargan `.env.demo.local` o `DEMO_ENV_FILE=<ruta>`. Consulta
+`docs/demo-runbook.md` y `docs/demo-checklist.md` para el flujo de evento,
+recuperacion y cierre.

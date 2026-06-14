@@ -14,6 +14,10 @@ build/
 .env
 .env.local
 .env.*.local
+.env.demo.local
+
+# Local demo release candidate runtime
+.runtime/
 
 # Logs
 *.log
