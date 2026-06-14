@@ -1,7 +1,9 @@
 import { buildApp } from "./app";
 import { env } from "./env";
+import { registerPulseScheduler } from "./pulse/scheduler";
 
 const app = buildApp({ enableRealtime: true });
+registerPulseScheduler(app);
 
 app
   .listen({ port: env.API_PORT, host: env.API_HOST })

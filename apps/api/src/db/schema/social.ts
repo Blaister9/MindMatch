@@ -126,6 +126,16 @@ export const clinics = social.table(
   }),
 );
 
+export const demoClocks = social.table("demo_clocks", {
+  clinicId: uuid("clinic_id")
+    .primaryKey()
+    .references(() => clinics.id, { onDelete: "cascade" }),
+  currentDate: date("current_date").notNull(),
+  lastRequestId: uuid("last_request_id"),
+  lastResultJson: jsonb("last_result_json").$type<Record<string, unknown>>(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const users = social.table(
   "users",
   {

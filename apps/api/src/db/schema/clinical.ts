@@ -113,6 +113,7 @@ export const checkInPreferences = clinical.table(
     clinicId: clinicId(),
     patientUserId: uuid("patient_user_id").notNull(),
     enabled: boolean("enabled").default(true).notNull(),
+    enabledOn: date("enabled_on"),
     localTime: time("local_time").notNull(),
     timezone: varchar("timezone", { length: 80 }).notNull(),
     createdAt: createdAt(),
@@ -210,6 +211,7 @@ export const alerts = clinical.table(
     ruleCode: pulseRuleCodeEnum("rule_code").notNull(),
     severity: alertSeverityEnum("severity").notNull(),
     status: alertStatusEnum("status").default("open").notNull(),
+    dedupeKey: text("dedupe_key"),
     inputsJson: jsonb("inputs_json").$type<Record<string, unknown>>().notNull(),
     triggeredAt: timestamp("triggered_at", { withTimezone: true }).notNull(),
     managedAt: timestamp("managed_at", { withTimezone: true }),
@@ -238,6 +240,16 @@ export const alerts = clinical.table(
     patientTriggeredIdx: index("alerts_patient_triggered_idx").on(
       table.clinicId,
       table.patientUserId,
+      table.triggeredAt,
+    ),
+    dedupeUnique: uniqueIndex("alerts_episode_dedupe_uidx")
+      .on(table.clinicId, table.patientUserId, table.ruleCode, table.dedupeKey)
+      .where(sql`${table.dedupeKey} IS NOT NULL`),
+    patientRuleStatusIdx: index("alerts_patient_rule_status_idx").on(
+      table.clinicId,
+      table.patientUserId,
+      table.ruleCode,
+      table.status,
       table.triggeredAt,
     ),
   }),

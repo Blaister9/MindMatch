@@ -7,6 +7,11 @@ import type {
   ReportResult,
   SwipeInput,
   SwipeResult,
+  PulseTodayResponse,
+  PulseHistoryResponse,
+  PulsePreferencesResponse,
+  UpsertCheckInInput,
+  UpdatePulsePreferencesInput,
 } from "@mindmatch/shared";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
@@ -89,6 +94,41 @@ export function reportMessage(
 ): Promise<ReportResult> {
   return request<ReportResult>(`/patient/messages/${messageId}/report`, token, {
     method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function fetchPulseToday(token: string): Promise<PulseTodayResponse> {
+  return request<PulseTodayResponse>("/patient/pulse/today", token);
+}
+
+export function savePulseToday(
+  token: string,
+  input: UpsertCheckInInput,
+): Promise<{ checkIn: PulseTodayResponse["checkIn"] }> {
+  return request<{ checkIn: PulseTodayResponse["checkIn"] }>("/patient/pulse/today", token, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function fetchPulseHistory(
+  token: string,
+  days: 7 | 30,
+): Promise<PulseHistoryResponse> {
+  return request<PulseHistoryResponse>(`/patient/pulse/history?days=${days}`, token);
+}
+
+export function fetchPulsePreferences(token: string): Promise<PulsePreferencesResponse> {
+  return request<PulsePreferencesResponse>("/patient/pulse/preferences", token);
+}
+
+export function savePulsePreferences(
+  token: string,
+  input: UpdatePulsePreferencesInput,
+): Promise<PulsePreferencesResponse> {
+  return request<PulsePreferencesResponse>("/patient/pulse/preferences", token, {
+    method: "PUT",
     body: JSON.stringify(input),
   });
 }

@@ -39,6 +39,7 @@ export async function resetDemoTenant(tx: Transaction): Promise<void> {
   await tx.delete(schema.patientClinical).where(eq(schema.patientClinical.clinicId, clinicId));
 
   await tx.delete(schema.messageReports).where(eq(schema.messageReports.clinicId, clinicId));
+  await tx.delete(schema.demoClocks).where(eq(schema.demoClocks.clinicId, clinicId));
   await tx.delete(schema.messages).where(eq(schema.messages.clinicId, clinicId));
   await tx.delete(schema.conversationMembers).where(eq(schema.conversationMembers.clinicId, clinicId));
   await tx.delete(schema.supportGroups).where(eq(schema.supportGroups.clinicId, clinicId));

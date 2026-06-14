@@ -165,6 +165,7 @@ export async function verifyDemoSeed(
   expect("intereses", await countRows(schema.interests, clinicScope(schema.interests)), 15);
   expect("patient_clinical", await countRows(schema.patientClinical, clinicScope(schema.patientClinical)), 8);
   expect("check_in_preferences", await countRows(schema.checkInPreferences, clinicScope(schema.checkInPreferences)), 8);
+  expect("demo_clocks", await countRows(schema.demoClocks, eq(schema.demoClocks.clinicId, clinicId)), 1);
   expect("check_ins", await countRows(schema.checkIns, clinicScope(schema.checkIns)), 112);
   expect("match_scores", await countRows(schema.matchScores, clinicScope(schema.matchScores)), 18);
   expect("conexiones", await countRows(schema.connections, clinicScope(schema.connections)), 7);
@@ -206,6 +207,15 @@ export async function verifyDemoSeed(
   expect("patient_daily_metrics", await countRows(schema.patientDailyMetrics, clinicScope(schema.patientDailyMetrics)), 0);
   expect("swipes", await countRows(schema.swipes, clinicScope(schema.swipes)), 0);
   expect("message_reports", await countRows(schema.messageReports, clinicScope(schema.messageReports)), 0);
+
+  const [demoClock] = await ex
+    .select({ currentDate: schema.demoClocks.currentDate })
+    .from(schema.demoClocks)
+    .where(eq(schema.demoClocks.clinicId, clinicId))
+    .limit(1);
+  if (demoClock?.currentDate !== anchor.today) {
+    problems.push(`Reloj demo ${demoClock?.currentDate ?? "ausente"} != ${anchor.today}.`);
+  }
 
   // ── Mensajes por tipo de conversación ───────────────────────────
   const directConvs = await ex

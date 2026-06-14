@@ -127,8 +127,8 @@ contraseñas ni tokens): dos ejecuciones el mismo día producen la misma firma.
   no se llama a Claude API ni a embeddings.
 - Sin datos reales: todo es ficticio y local. No se imprimen contraseñas,
   tokens ni hashes.
-- No se siembran embeddings, alertas, risk scores ni eventos analytics; la
-  detección del Pulso (R1–R6) y la analítica llegan en fases posteriores.
+- No se siembran embeddings, alertas, risk scores ni eventos analytics; el
+  Pulso se ejecuta desde check-ins reales o desde `Simular dia`.
 
 ## Fase 3 — Matching, swipe y aprobación
 
@@ -160,6 +160,72 @@ Proveedor de matching seleccionable con `MATCHING_PROVIDER`:
 - `pgvector`: similitud coseno sobre `social.profile_embeddings`; si faltan
   embeddings devuelve un estado controlado (deck vacío) sin llamar servicios
   externos.
+
+## Fase 5 - Pulso emocional y reglas
+
+El Pulso Emocional usa reglas deterministicas TypeScript puras. No usa LLM,
+embeddings, BullMQ ni servicios externos; `clinical.risk_scores` permanece sin
+poblar.
+
+Todas las fechas logicas son `YYYY-MM-DD` en `America/Bogota`. `triggered_at`
+sigue siendo timestamp real. El reloj de negocio resuelve clinicas normales con
+fecha real Bogota y `mindmatch-demo` con `social.demo_clocks.current_date`
+cuando `DEMO_MODE=true`.
+
+Reglas:
+
+- R1: 10 fechas consecutivas terminando en `asOfDate`; compara ultimos 3 dias
+  contra los 7 previos con `6 * previousSum - 14 * recentSum >= 63`.
+- R2: animo `<= 2` por 3+ dias consecutivos; severidad alta.
+- R3: preferencia habilitada y sin check-in por 3+ dias; usa `enabled_on`.
+- R4: sueno `<= 2` por 4+ dias consecutivos; severidad media.
+- R5: 7 dias sin conexion social y tendencia plana/negativa usando el numerador
+  entero `n * sum(xy) - sum(x) * sum(y) <= 0`.
+- R6: nace exclusivamente de reportes de chat.
+
+Las alertas son eventos inmutables. Editar el check-in del dia actual reevalua,
+pero no borra ni reescribe alertas existentes. La deduplicacion es por episodio:
+`R1:<episodeStartDate>`, `R2:<streakStartDate>`, `R3:<absenceStartDate>`,
+`R4:<streakStartDate>`, `R5:<episodeStartDate>` y `R6:<messageReportId>`.
+
+Paciente:
+
+- `GET /patient/pulse/today`
+- `PUT /patient/pulse/today`
+- `GET /patient/pulse/history?days=7|30`
+- `GET /patient/pulse/preferences`
+- `PUT /patient/pulse/preferences`
+
+Doctora:
+
+- `GET /doctor/alerts`
+- `GET /doctor/alerts/:alertId`
+- `POST /doctor/alerts/:alertId/manage`
+- `GET /doctor/patients/:patientUserId/pulse?days=7|30`
+- `POST /doctor/demo/simulate-day`
+
+`POST /doctor/alerts/:alertId/manage` coordina R6 en la misma transaccion:
+alerta `managed` y `message_reports.status = reviewed`, sin consultar ni
+devolver cuerpo/detalles de mensajes.
+
+`POST /doctor/demo/simulate-day` acepta solo `requestId` UUID, toma tenant de la
+sesion, exige doctora y `DEMO_MODE=true`, bloquea transaccionalmente la clinica
+y avanza exactamente un dia. Repetir el mismo `requestId` devuelve el mismo
+resultado sin avanzar. La primera simulacion tras seed limpio crea ocho
+check-ins y solo dos alertas nuevas: R1 media y R2 alta para Mariana.
+
+`pnpm pulse:evaluate` evalua clinicas normales con fecha real Bogota. El
+scheduler se activa solo con `PULSE_SCHEDULER_ENABLED=true`, esta deshabilitado
+por defecto y omite `mindmatch-demo` cuando `DEMO_MODE=true`. Varias instancias
+se coordinan mediante advisory locks de PostgreSQL.
+
+Privacidad y limitaciones:
+
+- Pacientes no reciben `ruleCode`, `alertId`, severidad, `dedupeKey`,
+  `inputsJson` ni ids clinicos.
+- Doctora no recibe mensajes de chat ni previews.
+- No hay IA, risk score, push notifications reales, RLS, Power BI ni hardening
+  productivo en esta fase.
 
 ## Fase 1
 

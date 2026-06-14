@@ -50,6 +50,10 @@ export async function insertDemoTenant(
     timezone: DEMO_CLINIC_TIMEZONE,
     status: "active",
   });
+  await tx.insert(schema.demoClocks).values({
+    clinicId,
+    currentDate: anchor.today,
+  });
 
   // 2) Doctora
   const doctorUserId = randomUUID();
@@ -179,6 +183,7 @@ export async function insertDemoTenant(
       clinicId,
       patientUserId: userIdByKey[patient.key],
       enabled: true,
+      enabledOn: anchor.today,
       localTime: patient.checkInLocalTime,
       timezone: DEMO_CLINIC_TIMEZONE,
     });

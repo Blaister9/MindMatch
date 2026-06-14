@@ -2,6 +2,8 @@ import type {
   DoctorConnectionsMetadataResponse,
   DoctorPendingMatchesResponse,
   DoctorReportsResponse,
+  DoctorAlertsResponse,
+  SimulateDayResponse,
   MatchActionResult,
 } from "@mindmatch/shared";
 
@@ -85,4 +87,28 @@ export function fetchConnectionMetadata(
 
 export function fetchOpenReports(token: string): Promise<DoctorReportsResponse> {
   return request<DoctorReportsResponse>("/doctor/reports/open", token);
+}
+
+export function fetchDoctorAlerts(
+  token: string,
+  status: "open" | "managed" | "all" = "open",
+): Promise<DoctorAlertsResponse> {
+  return request<DoctorAlertsResponse>(`/doctor/alerts?status=${status}`, token);
+}
+
+export function manageAlert(token: string, alertId: string): Promise<{ status: string }> {
+  return request<{ status: string }>(`/doctor/alerts/${alertId}/manage`, token, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function simulateDay(
+  token: string,
+  requestId: string,
+): Promise<SimulateDayResponse> {
+  return request<SimulateDayResponse>("/doctor/demo/simulate-day", token, {
+    method: "POST",
+    body: JSON.stringify({ requestId }),
+  });
 }

@@ -39,6 +39,10 @@ const envSchema = z.object({
   // Selección explícita del proveedor de matching (Fase 3). Demo lee
   // social.match_scores sembrados; pgvector usa profile_embeddings.
   MATCHING_PROVIDER: z.enum(["demo", "pgvector"]).default("demo"),
+  PULSE_SCHEDULER_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
 });
 
 const parsed = envSchema.safeParse({

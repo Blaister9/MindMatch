@@ -10,6 +10,7 @@ import { updatePatientProfileSchema } from "@mindmatch/shared";
 import { DiscoveryDeck } from "./components/DiscoveryDeck";
 import { ConnectionsList } from "./components/ConnectionsList";
 import { ChatWorkspace } from "./components/ChatWorkspace";
+import { PulseDashboard } from "./components/PulseDashboard";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const DEFAULT_CLINIC_SLUG =
@@ -42,7 +43,7 @@ export function App() {
   const [loginClinicSlug, setLoginClinicSlug] = useState(DEFAULT_CLINIC_SLUG);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [tab, setTab] = useState<"descubrir" | "conexiones" | "perfil">(
+  const [tab, setTab] = useState<"descubrir" | "conexiones" | "pulso" | "perfil">(
     "descubrir",
   );
   const [profile, setProfile] = useState<PatientProfile | null>(null);
@@ -322,11 +323,12 @@ export function App() {
         </button>
       </header>
 
-      <nav className="mb-6 grid grid-cols-3 gap-2" aria-label="Secciones">
+      <nav className="mb-6 grid grid-cols-4 gap-2" aria-label="Secciones">
         {(
           [
             ["descubrir", "Descubrir"],
             ["conexiones", "Conexiones"],
+            ["pulso", "Pulso"],
             ["perfil", "Perfil"],
           ] as const
         ).map(([key, label]) => (
@@ -353,6 +355,7 @@ export function App() {
           </div>
         </>
       )}
+      {tab === "pulso" && accessToken && <PulseDashboard token={accessToken} />}
 
       {tab === "perfil" && (
       <form className="space-y-4 rounded-card bg-white p-5 shadow-sm" onSubmit={saveProfile}>

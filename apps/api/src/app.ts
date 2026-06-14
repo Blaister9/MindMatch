@@ -10,6 +10,7 @@ import { doctorMatchRoutes } from "./routes/doctor-matches";
 import { doctorReportRoutes } from "./routes/doctor-reports";
 import { invitationRoutes } from "./routes/invitations";
 import { patientRoutes } from "./routes/patient";
+import { pulseRoutes } from "./routes/pulse";
 import { reportRoutes } from "./routes/reports";
 import { attachRealtime } from "./realtime/io";
 import { env, frontendOrigins } from "./env";
@@ -109,6 +110,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   app.register(conversationRoutes);
   app.register(reportRoutes);
   app.register(doctorReportRoutes);
+  app.register(pulseRoutes);
 
   if (options.enableRealtime) {
     attachRealtime(app);

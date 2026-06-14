@@ -173,6 +173,7 @@ export async function reportMessage(
       ruleCode: "R6",
       severity: "high",
       status: "open",
+      dedupeKey: `R6:${newReport.id}`,
       inputsJson: {
         messageReportId: newReport.id,
         conversationId: message.conversationId,
@@ -183,7 +184,7 @@ export async function reportMessage(
         triggeredAt: triggeredAt.toISOString(),
       },
       triggeredAt,
-    });
+    }).onConflictDoNothing();
 
     return {
       kind: "created",

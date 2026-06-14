@@ -12,4 +12,5 @@ export * from "./interests";
 export * from "./invitations";
 export * from "./matching";
 export * from "./profile";
+export * from "./pulse";
 export * from "./resources";
