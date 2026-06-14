@@ -2,6 +2,8 @@ import type {
   CandidatesResponse,
   ConversationsResponse,
   MessagesPage,
+  MissionActionResult,
+  MissionsResponse,
   PatientConnectionsResponse,
   ReportInput,
   ReportResult,
@@ -130,5 +132,19 @@ export function savePulsePreferences(
   return request<PulsePreferencesResponse>("/patient/pulse/preferences", token, {
     method: "PUT",
     body: JSON.stringify(input),
+  });
+}
+
+export function fetchMissions(token: string): Promise<MissionsResponse> {
+  return request<MissionsResponse>("/patient/missions", token);
+}
+
+export function completeMission(
+  token: string,
+  missionId: string,
+): Promise<MissionActionResult> {
+  return request<MissionActionResult>(`/patient/missions/${missionId}/complete`, token, {
+    method: "POST",
+    body: JSON.stringify({}),
   });
 }

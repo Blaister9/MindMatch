@@ -10,6 +10,26 @@ import { CONNECTION_TYPES, createInvitationSchema } from "@mindmatch/shared";
 import { PendingMatches } from "./components/PendingMatches";
 import { ChatOversight } from "./components/ChatOversight";
 import { PulseAlerts } from "./components/PulseAlerts";
+import { DashboardSummaryCards } from "./dashboard/DashboardSummary";
+import { PatientStatusGrid } from "./dashboard/PatientStatusGrid";
+import { AnalyticsPage } from "./analytics/AnalyticsPage";
+
+type DoctorView =
+  | "control"
+  | "pacientes"
+  | "matches"
+  | "reportes"
+  | "pulso"
+  | "analitica";
+
+const DOCTOR_NAV: ReadonlyArray<{ key: DoctorView; label: string }> = [
+  { key: "control", label: "Sala de control" },
+  { key: "pacientes", label: "Pacientes e invitaciones" },
+  { key: "matches", label: "Matches" },
+  { key: "reportes", label: "Conexiones y reportes" },
+  { key: "pulso", label: "Pulso emocional" },
+  { key: "analitica", label: "Analítica" },
+];
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const DEFAULT_CLINIC_SLUG =
@@ -31,6 +51,7 @@ export function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [clinicSlug, setClinicSlug] = useState(DEFAULT_CLINIC_SLUG);
+  const [view, setView] = useState<DoctorView>("control");
   const [email, setEmail] = useState("doctora@demo.com");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -232,17 +253,45 @@ export function App() {
           <h1 className="text-lg font-bold text-brand-600">
             MindMatch · Panel de la doctora
           </h1>
-          <p className="text-sm text-slate-500">Invitaciones de pacientes</p>
+          <p className="text-sm text-slate-500">Sala de control y seguimiento</p>
         </div>
         <button className="rounded-lg border px-4 py-2 text-sm" onClick={logout}>
           Salir
         </button>
       </header>
 
+      <nav className="border-b border-slate-200 bg-white px-8" aria-label="Secciones">
+        <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto">
+          {DOCTOR_NAV.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              aria-current={view === item.key}
+              onClick={() => setView(item.key)}
+              className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium ${
+                view === item.key
+                  ? "border-brand-600 text-brand-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
       <main className="mx-auto w-full max-w-6xl space-y-6 px-8 py-8">
-        {accessToken && <PulseAlerts token={accessToken} />}
-        {accessToken && <ChatOversight token={accessToken} />}
-        {accessToken && <PendingMatches token={accessToken} />}
+        {accessToken && view === "control" && (
+          <>
+            <DashboardSummaryCards token={accessToken} />
+            <PatientStatusGrid token={accessToken} />
+          </>
+        )}
+        {accessToken && view === "matches" && <PendingMatches token={accessToken} />}
+        {accessToken && view === "reportes" && <ChatOversight token={accessToken} />}
+        {accessToken && view === "pulso" && <PulseAlerts token={accessToken} />}
+        {accessToken && view === "analitica" && <AnalyticsPage token={accessToken} />}
+        {view === "pacientes" && (
         <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-6">
           <h2 className="text-lg font-bold text-slate-800">Crear invitación</h2>
@@ -314,6 +363,7 @@ export function App() {
           </div>
         </section>
         </div>
+        )}
       </main>
     </div>
   );

@@ -4,6 +4,7 @@ import { db, schema } from "../db";
 import { env } from "../env";
 import { realTodayBogota } from "./business-clock";
 import { evaluateClinicPulse } from "./pulse-service";
+import { runClinicAnalyticsRefresh } from "../analytics/refresh-service";
 import { DEMO_CLINIC_SLUG } from "../seed/data/clinic";
 
 async function evaluateNormalClinics() {
@@ -12,9 +13,21 @@ async function evaluateNormalClinics() {
     .select({ id: schema.clinics.id, slug: schema.clinics.slug })
     .from(schema.clinics)
     .where(eq(schema.clinics.status, "active"));
+  const analyticsFailures: string[] = [];
   for (const clinic of clinics) {
     if (env.DEMO_MODE && clinic.slug === DEMO_CLINIC_SLUG) continue;
     await evaluateClinicPulse(clinic.id, today);
+    // Tras la evaluación diaria, refrescar analytics de esa clínica (idempotente).
+    // Un fallo de analytics no aborta el Pulso de otras clínicas; se reporta al
+    // final y se reintenta en el próximo arranque del scheduler.
+    try {
+      await runClinicAnalyticsRefresh(clinic.id);
+    } catch {
+      analyticsFailures.push(clinic.id);
+    }
+  }
+  if (analyticsFailures.length > 0) {
+    throw new Error(`analytics refresh failed for clinics: ${analyticsFailures.join(", ")}`);
   }
 }
 

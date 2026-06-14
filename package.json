@@ -15,6 +15,7 @@
     "typecheck": "turbo run typecheck",
     "seed": "pnpm --filter @mindmatch/api seed",
     "pulse:evaluate": "pnpm --filter @mindmatch/api pulse:evaluate",
+    "analytics:refresh": "pnpm --filter @mindmatch/api analytics:refresh",
     "db:generate": "pnpm --filter @mindmatch/api db:generate",
     "db:migrate": "pnpm --filter @mindmatch/api db:migrate",
     "db:push": "pnpm --filter @mindmatch/api db:push",

@@ -3,8 +3,11 @@ import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
+import { analyticsRoutes } from "./routes/analytics";
 import { authRoutes } from "./routes/auth";
 import { conversationRoutes } from "./routes/conversations";
+import { dashboardRoutes } from "./routes/dashboard";
+import { missionRoutes } from "./routes/missions";
 import { discoveryRoutes } from "./routes/discovery";
 import { doctorMatchRoutes } from "./routes/doctor-matches";
 import { doctorReportRoutes } from "./routes/doctor-reports";
@@ -34,6 +37,8 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
                 "req.cookies",
                 "req.body.body",
                 "req.body.details",
+                "req.body.title",
+                "req.body.description",
                 "req.body.password",
                 "req.body.passwordConfirmation",
                 "req.body.token",
@@ -56,6 +61,8 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
                 "req.cookies",
                 "req.body.body",
                 "req.body.details",
+                "req.body.title",
+                "req.body.description",
                 "req.body.password",
                 "req.body.passwordConfirmation",
                 "req.body.token",
@@ -113,6 +120,9 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   app.register(reportRoutes);
   app.register(doctorReportRoutes);
   app.register(pulseRoutes);
+  app.register(dashboardRoutes);
+  app.register(missionRoutes);
+  app.register(analyticsRoutes);
 
   if (options.enableRealtime) {
     attachRealtime(app, { typingExpiryMs: options.typingExpiryMs });

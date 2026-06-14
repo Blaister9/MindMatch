@@ -6,6 +6,7 @@ import { env } from "../env";
 import { addDays } from "./dates";
 import { advisoryTransactionLock } from "./locks";
 import { evaluateClinicPulseTx } from "./pulse-service";
+import { refreshAnalytics } from "../analytics/refresh-service";
 import { DEMO_CLINIC_SLUG } from "../seed/data/clinic";
 import { PATIENTS, type PatientKey } from "../seed/data/patients";
 
@@ -104,6 +105,11 @@ export async function simulateDemoDay(
     }
 
     const created = await evaluateClinicPulseTx(tx, clinicId, nextDate);
+    // Refresh de analytics DENTRO de la misma transacción: lee los check-ins y
+    // alertas recién creados con el mismo tx; si falla, rollback de toda la
+    // simulación (last_result_json no se guarda). No abre 2ª transacción ni
+    // re-adquiere un lock incompatible (usa el tx existente).
+    await refreshAnalytics(tx, clinicId, { today: nextDate });
     const nameByUser = new Map(profileRows.map((row) => [row.userId, row.displayName]));
     const result: SimulateDayResponse = {
       previousDate: clock.currentDate,

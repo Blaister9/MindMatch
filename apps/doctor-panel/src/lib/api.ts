@@ -1,8 +1,19 @@
 import type {
+  AlertsAggregationResponse,
+  AnalyticsSummaryResponse,
+  CreateMissionInput,
+  DashboardSummary,
   DoctorConnectionsMetadataResponse,
   DoctorPendingMatchesResponse,
   DoctorReportsResponse,
   DoctorAlertsResponse,
+  FunnelResponse,
+  Mission,
+  MissionActionResult,
+  MissionsResponse,
+  MoodSeriesResponse,
+  PatientCardsResponse,
+  PatientOverview,
   SimulateDayResponse,
   MatchActionResult,
 } from "@mindmatch/shared";
@@ -111,4 +122,65 @@ export function simulateDay(
     method: "POST",
     body: JSON.stringify({ requestId }),
   });
+}
+
+// ── Fase 6: dashboard, misiones, analítica ──
+export function fetchDashboardSummary(token: string): Promise<DashboardSummary> {
+  return request<DashboardSummary>("/doctor/dashboard/summary", token);
+}
+
+export function fetchPatientCards(token: string): Promise<PatientCardsResponse> {
+  return request<PatientCardsResponse>("/doctor/dashboard/patients", token);
+}
+
+export function fetchPatientOverview(
+  token: string,
+  patientUserId: string,
+): Promise<PatientOverview> {
+  return request<PatientOverview>(`/doctor/patients/${patientUserId}/overview`, token);
+}
+
+export function fetchDoctorMissions(
+  token: string,
+  patientUserId: string,
+): Promise<MissionsResponse> {
+  return request<MissionsResponse>(`/doctor/patients/${patientUserId}/missions`, token);
+}
+
+export function createMission(
+  token: string,
+  patientUserId: string,
+  input: CreateMissionInput,
+): Promise<{ mission: Mission }> {
+  return request<{ mission: Mission }>(
+    `/doctor/patients/${patientUserId}/missions`,
+    token,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export function cancelMission(
+  token: string,
+  missionId: string,
+): Promise<MissionActionResult> {
+  return request<MissionActionResult>(`/doctor/missions/${missionId}/cancel`, token, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function fetchAnalyticsSummary(token: string): Promise<AnalyticsSummaryResponse> {
+  return request<AnalyticsSummaryResponse>("/doctor/analytics/summary", token);
+}
+
+export function fetchAnalyticsMood(token: string): Promise<MoodSeriesResponse> {
+  return request<MoodSeriesResponse>("/doctor/analytics/mood", token);
+}
+
+export function fetchAnalyticsAlerts(token: string): Promise<AlertsAggregationResponse> {
+  return request<AlertsAggregationResponse>("/doctor/analytics/alerts", token);
+}
+
+export function fetchAnalyticsFunnel(token: string): Promise<FunnelResponse> {
+  return request<FunnelResponse>("/doctor/analytics/funnel", token);
 }

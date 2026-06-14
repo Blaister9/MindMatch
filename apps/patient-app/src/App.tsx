@@ -11,6 +11,7 @@ import { DiscoveryDeck } from "./components/DiscoveryDeck";
 import { ConnectionsList } from "./components/ConnectionsList";
 import { ChatWorkspace } from "./components/ChatWorkspace";
 import { PulseDashboard } from "./components/PulseDashboard";
+import { MissionsList } from "./components/MissionsList";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const DEFAULT_CLINIC_SLUG =
@@ -43,9 +44,9 @@ export function App() {
   const [loginClinicSlug, setLoginClinicSlug] = useState(DEFAULT_CLINIC_SLUG);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [tab, setTab] = useState<"descubrir" | "conexiones" | "pulso" | "perfil">(
-    "descubrir",
-  );
+  const [tab, setTab] = useState<
+    "descubrir" | "conexiones" | "pulso" | "misiones" | "perfil"
+  >("descubrir");
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [form, setForm] = useState({
@@ -323,12 +324,16 @@ export function App() {
         </button>
       </header>
 
-      <nav className="mb-6 grid grid-cols-4 gap-2" aria-label="Secciones">
+      <nav
+        className="mb-6 flex gap-2 overflow-x-auto pb-1"
+        aria-label="Secciones"
+      >
         {(
           [
             ["descubrir", "Descubrir"],
             ["conexiones", "Conexiones"],
             ["pulso", "Pulso"],
+            ["misiones", "Misiones"],
             ["perfil", "Perfil"],
           ] as const
         ).map(([key, label]) => (
@@ -336,7 +341,7 @@ export function App() {
             key={key}
             type="button"
             aria-current={tab === key}
-            className={`rounded-xl px-3 py-2 text-sm font-semibold ${
+            className={`shrink-0 rounded-xl px-4 py-2 text-sm font-semibold ${
               tab === key ? "bg-calma-600 text-white" : "bg-calma-100 text-calma-600"
             }`}
             onClick={() => setTab(key)}
@@ -356,6 +361,7 @@ export function App() {
         </>
       )}
       {tab === "pulso" && accessToken && <PulseDashboard token={accessToken} />}
+      {tab === "misiones" && accessToken && <MissionsList token={accessToken} />}
 
       {tab === "perfil" && (
       <form className="space-y-4 rounded-card bg-white p-5 shadow-sm" onSubmit={saveProfile}>

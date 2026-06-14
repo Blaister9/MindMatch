@@ -258,3 +258,44 @@ Limitaciones de Fase 1:
 - No hay seed completo de Fase 2.
 - No hay swipe, matching, chat, check-in, alertas, Socket.io, BullMQ ni IA.
 - Refresh tokens no tienen familia de rotación; queda como pendiente de producción.
+
+## Fase 6 — Sala de control, misiones y analítica
+
+Panel de la doctora con navegación interna: **Sala de control**, **Pacientes e
+invitaciones**, **Matches**, **Conexiones y reportes**, **Pulso emocional** y
+**Analítica**.
+
+- **Sala de control:** cuatro métricas (pacientes activos, check-ins de hoy,
+  alertas abiertas —con cuántas se dispararon hoy—, matches pendientes), fecha
+  lógica del Business Clock, indicador de modo demo y grid de pacientes con
+  semáforo determinístico (`verde|amarillo|rojo`, con etiqueta e icono). El
+  semáforo es operativo, no diagnóstico: *"Estado de seguimiento según alertas
+  abiertas y actividad reciente."*
+- **Misiones de bienestar:** la doctora asigna y cancela; el paciente ve y
+  completa las propias. No son prescripciones médicas.
+- **Analítica (Recharts):** ánimo colectivo (promedio + tamaño de muestra, sin
+  imputar faltantes), alertas por regla/severidad, matching (tasa de aprobación
+  con denominador explícito) y embudo de adopción por cohorte de invitaciones.
+
+### Analítica: generación de métricas
+
+`analytics.patient_daily_metrics` y `analytics.clinic_daily_metrics` se
+reconstruyen con un comando determinístico (no se siembran):
+
+```bash
+pnpm seed
+pnpm seed
+pnpm --filter @mindmatch/api seed:verify   # exige analytics vacío (seed limpio)
+pnpm analytics:refresh                      # rellena snapshots (correr DESPUÉS de verify)
+```
+
+- Las métricas históricas (ánimo, sueño, check-ins, mensajes, alertas) se
+  reconstruyen exactamente por fecha desde las tablas fuente.
+- El snapshot operativo (pacientes activos, conexiones activas, matches
+  pendientes) se escribe **solo** en la fila del día actual; no se hace backfill
+  de estado actual sobre fechas pasadas.
+- `mindmatch-demo` se actualiza con `pnpm analytics:refresh` y con **Simular
+  día** (que refresca analytics dentro de su misma transacción). Las clínicas
+  normales se refrescan tras la evaluación diaria del scheduler de Pulso.
+- `analytics.events` queda reservado para una evolución futura de
+  instrumentación explícita.
