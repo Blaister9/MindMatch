@@ -583,6 +583,9 @@ export const messages = social.table(
     clinicId: clinicId(),
     conversationId: uuid("conversation_id").notNull(),
     senderUserId: uuid("sender_user_id").notNull(),
+    // Idempotencia de envío (Fase 4): uuid generado por el cliente. Nullable
+    // para mensajes históricos/seed; único por (clinic, sender) cuando existe.
+    clientMessageId: uuid("client_message_id"),
     messageType: messageTypeEnum("message_type").default("text").notNull(),
     // TODO(produccion): cifrar body con manejo de llaves por tenant antes de hardening.
     body: text("body").notNull(),
@@ -615,6 +618,14 @@ export const messages = social.table(
       table.clinicId,
       table.id,
     ),
+    // Idempotencia: una fila por (clinic, sender, client_message_id) no nulo.
+    clientMessageUnique: uniqueIndex("messages_client_message_uidx")
+      .on(table.clinicId, table.senderUserId, table.clientMessageId)
+      .where(sql`${table.clientMessageId} IS NOT NULL`),
+    // Paginación keyset de historial (solo mensajes vigentes).
+    conversationKeysetIdx: index("messages_conversation_keyset_idx")
+      .on(table.clinicId, table.conversationId, table.sentAt.desc(), table.id.desc())
+      .where(sql`${table.deletedAt} IS NULL`),
   }),
 );
 
@@ -646,6 +657,12 @@ export const messageReports = social.table(
     createdAtIdx: index("message_reports_created_at_idx").on(
       table.clinicId,
       table.createdAt,
+    ),
+    // Idempotencia: un reporte por (clinic, message, reporter).
+    reporterMessageUnique: uniqueIndex("message_reports_reporter_message_uidx").on(
+      table.clinicId,
+      table.messageId,
+      table.reporterUserId,
     ),
   }),
 );

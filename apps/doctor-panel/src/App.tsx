@@ -8,6 +8,7 @@ import type {
 } from "@mindmatch/shared";
 import { CONNECTION_TYPES, createInvitationSchema } from "@mindmatch/shared";
 import { PendingMatches } from "./components/PendingMatches";
+import { ChatOversight } from "./components/ChatOversight";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const DEFAULT_CLINIC_SLUG =
@@ -238,6 +239,7 @@ export function App() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl space-y-6 px-8 py-8">
+        {accessToken && <ChatOversight token={accessToken} />}
         {accessToken && <PendingMatches token={accessToken} />}
         <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
         <section className="rounded-xl border border-slate-200 bg-white p-6">

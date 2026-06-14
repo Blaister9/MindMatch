@@ -15,6 +15,13 @@
       "when": 1781366394864,
       "tag": "0001_remarkable_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781397991002,
+      "tag": "0002_empty_wrecking_crew",
+      "breakpoints": true
     }
   ]
 }

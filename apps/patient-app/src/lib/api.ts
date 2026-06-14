@@ -1,6 +1,10 @@
 import type {
   CandidatesResponse,
+  ConversationsResponse,
+  MessagesPage,
   PatientConnectionsResponse,
+  ReportInput,
+  ReportResult,
   SwipeInput,
   SwipeResult,
 } from "@mindmatch/shared";
@@ -59,4 +63,32 @@ export function fetchConnections(
   token: string,
 ): Promise<PatientConnectionsResponse> {
   return request<PatientConnectionsResponse>("/patient/connections", token);
+}
+
+export function fetchConversations(token: string): Promise<ConversationsResponse> {
+  return request<ConversationsResponse>("/patient/conversations", token);
+}
+
+export function fetchMessages(
+  token: string,
+  conversationId: string,
+  cursor?: string | null,
+): Promise<MessagesPage> {
+  const params = new URLSearchParams({ limit: "30" });
+  if (cursor) params.set("cursor", cursor);
+  return request<MessagesPage>(
+    `/patient/conversations/${conversationId}/messages?${params.toString()}`,
+    token,
+  );
+}
+
+export function reportMessage(
+  token: string,
+  messageId: string,
+  input: ReportInput,
+): Promise<ReportResult> {
+  return request<ReportResult>(`/patient/messages/${messageId}/report`, token, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

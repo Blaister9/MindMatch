@@ -1,7 +1,7 @@
 import { buildApp } from "./app";
 import { env } from "./env";
 
-const app = buildApp();
+const app = buildApp({ enableRealtime: true });
 
 app
   .listen({ port: env.API_PORT, host: env.API_HOST })

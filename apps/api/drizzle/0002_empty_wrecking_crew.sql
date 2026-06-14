@@ -1,0 +1,4 @@
+ALTER TABLE "social"."messages" ADD COLUMN "client_message_id" uuid;--> statement-breakpoint
+CREATE UNIQUE INDEX "message_reports_reporter_message_uidx" ON "social"."message_reports" USING btree ("clinic_id","message_id","reporter_user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "messages_client_message_uidx" ON "social"."messages" USING btree ("clinic_id","sender_user_id","client_message_id") WHERE "social"."messages"."client_message_id" IS NOT NULL;--> statement-breakpoint
+CREATE INDEX "messages_conversation_keyset_idx" ON "social"."messages" USING btree ("clinic_id","conversation_id","sent_at" DESC NULLS LAST,"id" DESC NULLS LAST) WHERE "social"."messages"."deleted_at" IS NULL;

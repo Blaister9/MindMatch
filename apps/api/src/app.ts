@@ -4,13 +4,22 @@ import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { authRoutes } from "./routes/auth";
+import { conversationRoutes } from "./routes/conversations";
 import { discoveryRoutes } from "./routes/discovery";
 import { doctorMatchRoutes } from "./routes/doctor-matches";
+import { doctorReportRoutes } from "./routes/doctor-reports";
 import { invitationRoutes } from "./routes/invitations";
 import { patientRoutes } from "./routes/patient";
+import { reportRoutes } from "./routes/reports";
+import { attachRealtime } from "./realtime/io";
 import { env, frontendOrigins } from "./env";
 
-export function buildApp(): FastifyInstance {
+export interface BuildAppOptions {
+  /** Adjunta Socket.io al servidor HTTP. true en runtime real y tests realtime. */
+  enableRealtime?: boolean;
+}
+
+export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   const app = Fastify({
     logger:
       env.NODE_ENV === "production"
@@ -20,6 +29,8 @@ export function buildApp(): FastifyInstance {
                 "req.headers.authorization",
                 "req.headers.cookie",
                 "req.cookies",
+                "req.body.body",
+                "req.body.details",
                 "req.body.password",
                 "req.body.passwordConfirmation",
                 "req.body.token",
@@ -40,6 +51,8 @@ export function buildApp(): FastifyInstance {
                 "req.headers.authorization",
                 "req.headers.cookie",
                 "req.cookies",
+                "req.body.body",
+                "req.body.details",
                 "req.body.password",
                 "req.body.passwordConfirmation",
                 "req.body.token",
@@ -93,6 +106,13 @@ export function buildApp(): FastifyInstance {
   app.register(patientRoutes);
   app.register(discoveryRoutes);
   app.register(doctorMatchRoutes);
+  app.register(conversationRoutes);
+  app.register(reportRoutes);
+  app.register(doctorReportRoutes);
+
+  if (options.enableRealtime) {
+    attachRealtime(app);
+  }
 
   return app;
 }

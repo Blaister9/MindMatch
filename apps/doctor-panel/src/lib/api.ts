@@ -1,5 +1,7 @@
 import type {
+  DoctorConnectionsMetadataResponse,
   DoctorPendingMatchesResponse,
+  DoctorReportsResponse,
   MatchActionResult,
 } from "@mindmatch/shared";
 
@@ -70,4 +72,17 @@ export function pauseMatch(
     token,
     { method: "POST", body: JSON.stringify(rationale ? { rationale } : {}) },
   );
+}
+
+export function fetchConnectionMetadata(
+  token: string,
+): Promise<DoctorConnectionsMetadataResponse> {
+  return request<DoctorConnectionsMetadataResponse>(
+    "/doctor/connections/metadata",
+    token,
+  );
+}
+
+export function fetchOpenReports(token: string): Promise<DoctorReportsResponse> {
+  return request<DoctorReportsResponse>("/doctor/reports/open", token);
 }

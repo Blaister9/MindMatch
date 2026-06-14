@@ -9,6 +9,7 @@ import type {
 import { updatePatientProfileSchema } from "@mindmatch/shared";
 import { DiscoveryDeck } from "./components/DiscoveryDeck";
 import { ConnectionsList } from "./components/ConnectionsList";
+import { ChatWorkspace } from "./components/ChatWorkspace";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const DEFAULT_CLINIC_SLUG =
@@ -31,6 +32,7 @@ function readInvitationToken() {
 
 export function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [invitation, setInvitation] =
@@ -73,6 +75,7 @@ export function App() {
       return;
     }
     setAccessToken(data.accessToken);
+    setCurrentUserId(data.user.userId);
   }
 
   async function validateInvitation(nextToken: string) {
@@ -159,6 +162,7 @@ export function App() {
     }
     const data = (await response.json()) as AuthSessionResponse;
     setAccessToken(data.accessToken);
+    setCurrentUserId(data.user.userId);
     setToken(null);
     setInvitation(null);
     await loadProfile(data.accessToken);
@@ -188,6 +192,7 @@ export function App() {
     }
     setLoginPassword("");
     setAccessToken(data.accessToken);
+    setCurrentUserId(data.user.userId);
     await loadProfile(data.accessToken);
   }
 
@@ -222,6 +227,7 @@ export function App() {
       });
     }
     setAccessToken(null);
+    setCurrentUserId(null);
     setProfile(null);
   }
 
@@ -339,7 +345,14 @@ export function App() {
       </nav>
 
       {tab === "descubrir" && accessToken && <DiscoveryDeck token={accessToken} />}
-      {tab === "conexiones" && accessToken && <ConnectionsList token={accessToken} />}
+      {tab === "conexiones" && accessToken && currentUserId && (
+        <>
+          <ConnectionsList token={accessToken} />
+          <div className="mt-5">
+            <ChatWorkspace token={accessToken} userId={currentUserId} />
+          </div>
+        </>
+      )}
 
       {tab === "perfil" && (
       <form className="space-y-4 rounded-card bg-white p-5 shadow-sm" onSubmit={saveProfile}>
